@@ -1,2 +1,2 @@
 { "name": "greeble-server", "private": true, "type": "module",
-  "scripts": { "start": "node src/server.js", "test": "node --test test/" } }
+  "scripts": { "start": "node src/server.js", "test": "node --test" } }
