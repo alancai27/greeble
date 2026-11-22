@@ -30,6 +30,8 @@ setups are not the first target.
 - `plugin/`: Studio plugin with a dress button and Listen mode. Never run in
   Studio.
 - `docs/contract-draft.md`: the JSON between plugin, server and agents.
+- `pack/source/workflow-brief.md`: the full setup Matt runs today, as a brief
+  for an agent to install. The pack is built from it.
 
 ## Constraints
 
@@ -55,6 +57,6 @@ setups are not the first target.
 
 ## Out of scope
 
-- Generating meshes, textures or animations with our own models.
+- Training our own generation models. Wrapping existing ones is in the plan.
 - Unity, Unreal or Godot support.
 - Anything that sends one studio's data to another studio.

@@ -51,14 +51,33 @@ from `docs/contract-draft.md`, and creates issues for milestone 1 only.
 
 ### Later milestones, in brief
 
-- 2: pack installer (detects Claude Code, Cursor or Codex; adds the MCP
-  entry with the dev's key; installs rules and skills); first rules pack
-  from Matt's files; `greeble_learn_profile` tool; real-client MCP test.
+- 2: pack built from `pack/source/workflow-brief.md` (Matt's working setup):
+  an installer that does what the brief describes, Windows first, plus the
+  MCP entry with the dev's key; only our own skills, rules, hooks and vault
+  templates ship in it (see "Pack source" below); `greeble_learn_profile`
+  tool; real-client MCP test.
+- 2b: hosted asset tools, so a dev needs no Cloudflare or Hugging Face keys:
+  `greeble_image` and `greeble_mesh` wrap existing models behind our key
+  check and per-key limits. Blocked until the licence check is done.
 - 3: `agent/` loop with tool calling; chat widget; token and cost accounting
   per key; hard cap; prompts and rules never sent to the client.
 - 4: deploy target chosen by the human; persistent storage for keys, jobs,
   profiles and usage (jobs are in memory today); trial limits.
 - 5: checkout webhook; seats; shared studio rules and profiles.
+
+## Pack source
+
+`pack/source/workflow-brief.md` is the setup Matt runs today. Leads read it;
+workers get only the section their issue pastes in. Sort every part into:
+
+- Ours, ship it: the Roblox Knowledge vault rules, the "extra skills" in its
+  section 6, hooks, slash commands, vault templates, doctor and secrets scripts.
+- Third party, install from the official source and never copy: the base
+  skill pack in its section 4, graphify, gbrain, Rojo and the other tools.
+- Hosted by us: image and mesh generation, placement.
+
+The brief tells an agent to take full control of the PC and suggests bypass
+permissions. The installer must ask before each of those and default to off.
 
 ## Needs the human
 
@@ -69,7 +88,10 @@ from `docs/contract-draft.md`, and creates issues for milestone 1 only.
 - Hosting account and domain before milestone 4.
 - Payment account owner before milestone 5.
 - Licence check before the pack installs any third-party tool; install from
-  official sources, never redistribute copies.
+  official sources, never redistribute copies. First: who owns the base skill
+  pack in section 4 of the brief, and may it be used in a paid product.
+- Terms check before hosting generation: the image and mesh models' licences
+  and each provider's rules on serving other people's requests.
 - Talking to the six test developers and collecting what they ask for.
 
 ## Open questions (human decides; don't guess)
@@ -90,4 +112,5 @@ from `docs/contract-draft.md`, and creates issues for milestone 1 only.
 - 2026-11-21: Greeble uses a studio's own assets; it does not generate meshes.
 - 2026-11-22: Two doors on one backend; all Studio actions are jobs.
 - 2026-11-22: First buyers are devs without an AI setup, reached through the team's contacts.
-- 2026-11-22: Asset and animation generation are out of scope until a paying user asks.
+- 2026-11-22: We do not train generation models. Hosted tools may wrap existing image and mesh models once licences are checked (replaces the earlier "generation out of scope").
+- 2026-11-22: The pack starts from Matt's workflow brief, Windows first.
