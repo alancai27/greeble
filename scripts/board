@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Usage: scripts/board [area]
+# Open issues and pull requests, one line each.
+set -euo pipefail
+
+area="${1:-}"
+filter=()
+if [ -n "$area" ]; then
+  filter=(--label "area:$area")
+fi
+
+echo "== issues =="
+gh issue list --state open --limit 100 ${filter[@]+"${filter[@]}"} \
+  --json number,title,labels \
+  --jq '.[] | "#\(.number)\t\([.labels[].name] | join(","))\t\(.title)"'
+
+echo "== open pull requests =="
+gh pr list --state open --limit 100 \
+  --json number,headRefName \
+  --jq '.[] | "PR #\(.number)\t\(.headRefName)"'

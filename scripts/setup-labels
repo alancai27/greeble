@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Usage: scripts/setup-labels
+# Create the workflow labels. Run once per repo.
+set -euo pipefail
+
+mk() {
+  gh label create "$1" --color "$2" --description "$3" --force >/dev/null
+  echo "label: $1"
+}
+
+mk todo              ededed "Ready for a worker"
+mk claimed           fbca04 "A worker is building it"
+mk needs-review      0e8a16 "Pull request is open"
+mk changes-requested d93f0b "Reviewer sent it back"
+mk blocked           b60205 "Worker asked a question"
+mk needs-human       5319e7 "Only the human can answer"

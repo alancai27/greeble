@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Usage: scripts/feedback
+# Worker: print the reviewer's latest comment on this branch's pull request.
+set -euo pipefail
+
+branch=$(git rev-parse --abbrev-ref HEAD)
+gh pr view "$branch" --json comments --jq '.comments[-1].body // "no feedback"'

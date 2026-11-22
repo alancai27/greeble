@@ -6,7 +6,9 @@ editable instances.
 
 - `plugin/` thin Studio client. Samples the zone, calls the server, creates instances.
 - `server/` everything of value: style profiles and placement. `npm test`, `GREEBLE_KEYS=... npm start`.
-- `docs/contract.md` the JSON both sides agree on.
+- `docs/contract-draft.md` the JSON both sides agree on.
+- `BRIEF.md`, `PLAN.md` what we're building and in what order (leads only).
+- `AGENTS.md`, `agents/`, `scripts/` the agent-team setup, copied from menagerie.
 
 ## State
 

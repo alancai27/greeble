@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Usage: scripts/task N            print issue N (title and body only)
+#        scripts/task N --latest   print only its most recent comment
+set -euo pipefail
+
+n="${1:?usage: scripts/task N [--latest]}"
+
+if [ "${2:-}" = "--latest" ]; then
+  gh issue view "$n" --json comments --jq '.comments[-1].body // "no comments"'
+else
+  gh issue view "$n" --json number,title,body \
+    --jq '"#\(.number) \(.title)\n\n\(.body)"'
+fi

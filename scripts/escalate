@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Usage: scripts/escalate N "one specific question"
+# Lead: flag an issue for the human when no agent can answer it
+# (a credential, an account action, a product decision).
+set -euo pipefail
+
+n="${1:?usage: scripts/escalate N \"question\"}"
+q="${2:?usage: scripts/escalate N \"question\"}"
+
+gh issue comment "$n" --body "NEEDS HUMAN: $q" >/dev/null
+gh issue edit "$n" --add-label needs-human >/dev/null
+echo "escalated #$n"

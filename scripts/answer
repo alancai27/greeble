@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Usage: scripts/answer N "answer"
+# Lead: answer a blocked issue and put it back in the queue.
+set -euo pipefail
+. "$(dirname "$0")/_lib.sh"
+
+n="${1:?usage: scripts/answer N \"answer\"}"
+a="${2:?usage: scripts/answer N \"answer\"}"
+
+gh issue comment "$n" --body "ANSWER: $a" >/dev/null
+if has_label "$(issue_labels "$n")" needs-human; then
+  gh issue edit "$n" --remove-label needs-human >/dev/null
+fi
+set_state "$n" todo
+echo "answered #$n"

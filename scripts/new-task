@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Usage: scripts/new-task AREA "Title" BODY.md
+# Create a todo issue in an area. Prints the new issue number.
+set -euo pipefail
+. "$(dirname "$0")/_lib.sh"
+
+area="${1:?usage: scripts/new-task AREA \"Title\" BODY.md}"
+title="${2:?usage: scripts/new-task AREA \"Title\" BODY.md}"
+body="${3:?usage: scripts/new-task AREA \"Title\" BODY.md}"
+[ -f "$body" ] || die "no such file: $body"
+
+gh label create "area:$area" --color 1d76db --force >/dev/null
+url=$(gh issue create --title "$title" --body-file "$body" \
+  --label todo --label "area:$area")
+echo "created #${url##*/}"

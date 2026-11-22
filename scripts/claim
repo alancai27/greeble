@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Usage: scripts/claim N
+# Take issue N and create (or reuse) its worktree. Prints the path to cd into.
+set -euo pipefail
+. "$(dirname "$0")/_lib.sh"
+
+n="${1:?usage: scripts/claim N}"
+labels=$(issue_labels "$n")
+if ! has_label "$labels" todo && ! has_label "$labels" changes-requested; then
+  die "issue #$n can't be claimed (labels: $labels)"
+fi
+
+root=$(main_root)
+dir=$(wt_dir "$n")
+if [ ! -d "$dir" ]; then
+  git -C "$root" fetch -q origin main
+  mkdir -p "$(dirname "$dir")"
+  if git -C "$root" show-ref --verify --quiet "refs/heads/issue-$n"; then
+    git -C "$root" worktree add -q "$dir" "issue-$n"
+  else
+    git -C "$root" worktree add -q "$dir" -b "issue-$n" origin/main
+  fi
+fi
+
+set_state "$n" claimed
+echo "$dir"

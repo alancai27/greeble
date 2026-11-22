@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Usage: scripts/block N "one specific question"
+# Worker: ask the lead a question and mark the issue blocked.
+set -euo pipefail
+. "$(dirname "$0")/_lib.sh"
+
+n="${1:?usage: scripts/block N \"question\"}"
+q="${2:?usage: scripts/block N \"question\"}"
+
+gh issue comment "$n" --body "BLOCKED: $q" >/dev/null
+set_state "$n" blocked
+echo "blocked #$n"
