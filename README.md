@@ -10,8 +10,8 @@ editable instances.
 
 ## State
 
-- Server: profile learning (density, scale range, spacing) and a rule-based
-  baseline placer with keep-clear, overlap and budget rules. Tested.
-- Plugin: written, **not yet run in Studio**.
-- Not built: learning a profile from a map inside the plugin, the agent layer
-  that plans zones and reviews screenshots, accounts and billing.
+- Server: profile learning, rule-based placer, job queue, MCP endpoint. Tested.
+- Plugin: dress button and Listen mode written, **not yet run in Studio**.
+- MCP endpoint: tested with hand-written JSON-RPC, **not yet with a real client**.
+- Not built: the hosted agent and chat panel, profile learning from inside the
+  plugin, the installer and rules pack, accounts and billing.

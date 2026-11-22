@@ -60,24 +60,31 @@ local function readKit(kit: Instance)
 	return assets, byId
 end
 
-local function post(path: string, body: any)
+local function request(method: string, path: string, body: any?)
 	local url = plugin:GetSetting("GreebleUrl")
 	local key = plugin:GetSetting("GreebleKey")
 	assert(url and key, "Set GreebleUrl and GreebleKey first")
 	local res = HttpService:RequestAsync({
 		Url = url .. path,
-		Method = "POST",
+		Method = method,
 		Headers = { ["Content-Type"] = "application/json", Authorization = "Bearer " .. key },
-		Body = HttpService:JSONEncode(body),
+		Body = if body then HttpService:JSONEncode(body) else nil,
 	})
 	assert(res.Success, "Greeble server: " .. tostring(res.StatusCode))
 	return HttpService:JSONDecode(res.Body)
 end
 
-local function dress()
-	local zone = workspace:FindFirstChild("GreebleZone")
+local function post(path: string, body: any)
+	return request("POST", path, body)
+end
+
+-- opts come from a queued job; a button click passes none.
+local function dress(opts: { zone: string?, maxInstances: number?, seed: number? }?)
+	local o = opts or {}
+	local zoneName = o.zone or "GreebleZone"
+	local zone = workspace:FindFirstChild(zoneName)
 	local kit = ServerStorage:FindFirstChild("GreebleKit")
-	assert(zone and zone:IsA("BasePart"), "Add a Part named GreebleZone")
+	assert(zone and zone:IsA("BasePart"), "No zone Part named " .. zoneName)
 	assert(kit, "Add a Folder named GreebleKit to ServerStorage")
 
 	local assets, byId = readKit(kit)
@@ -95,8 +102,8 @@ local function dress()
 		assets = assets,
 		keepClear = keepClear,
 		profile = HttpService:JSONDecode(profileJson),
-		budget = { maxInstances = zone:GetAttribute("MaxInstances") or 500 },
-		seed = zone:GetAttribute("Seed") or 1,
+		budget = { maxInstances = o.maxInstances or zone:GetAttribute("MaxInstances") or 500 },
+		seed = o.seed or zone:GetAttribute("Seed") or 1,
 	})
 
 	local recording = ChangeHistoryService:TryBeginRecording("Greeble: dress zone")
@@ -122,9 +129,35 @@ local function dress()
 		ChangeHistoryService:FinishRecording(recording, Enum.FinishRecordingOperation.Commit)
 	end
 	print(("Greeble placed %d instances"):format(result.stats.placed))
+	return result.stats
 end
 
 button.Click:Connect(function()
 	local ok, err = pcall(dress)
 	if not ok then warn(err) end
+end)
+
+-- Listening mode: pick up jobs queued by an agent or the chat panel.
+local listenButton = toolbar:CreateButton("Listen", "Run jobs sent to Greeble by your agent", "")
+local listening = false
+
+local function runJob(job)
+	local ok, out = pcall(function()
+		if job.type == "dress_zone" then return dress(job.params) end
+		error("unknown job type " .. tostring(job.type))
+	end)
+	pcall(post, "/v1/jobs/" .. job.id .. "/result", { ok = ok, result = if ok then out else { error = tostring(out) } })
+end
+
+listenButton.Click:Connect(function()
+	listening = not listening
+	listenButton:SetActive(listening)
+	if not listening then return end
+	task.spawn(function()
+		while listening do
+			local ok, res = pcall(request, "GET", "/v1/jobs/next")
+			if ok and res.job then runJob(res.job) elseif not ok then warn(res) end
+			task.wait(2)
+		end
+	end)
 end)
