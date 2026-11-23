@@ -4,19 +4,165 @@
 --
 -- Setup in Studio:
 --   1. Put a Part named "GreebleZone" over the area to dress (it is only a bounds box).
---   2. Put the asset kit (Models with a PrimaryPart) in a Folder named "GreebleKit" in ServerStorage.
+--   2. Put the asset kit (Models with a PrimaryPart) in a Folder, by default ServerStorage/GreebleKit.
 --   3. Optional: Parts tagged "GreebleKeepClear" mark paths and spawns.
---   4. Run `plugin:SetSetting("GreebleKey", "...")` and `plugin:SetSetting("GreebleUrl", "https://...")` once in the command bar.
+--   4. Click "Settings" on the Greeble toolbar, enter the server URL, key and kit path, then Save.
+--      The status line at the bottom of that widget shows the last result or error.
 
 local HttpService = game:GetService("HttpService")
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
 local CollectionService = game:GetService("CollectionService")
-local ServerStorage = game:GetService("ServerStorage")
 
 local CELL = 4
+local DEFAULT_KIT_PATH = "ServerStorage/GreebleKit"
+
+-- Raise a plain message with no script position prefix.
+local function fail(msg: string): never
+	error(msg, 0)
+end
+
+local function trim(s: string): string
+	return (s:gsub("^%s+", ""):gsub("%s+$", ""))
+end
+
+local function stripSlash(s: string): string
+	return (s:gsub("/+$", ""))
+end
+
+local function settingString(name: string): string?
+	local v = plugin:GetSetting(name)
+	if type(v) == "string" and v ~= "" then return v end
+	return nil
+end
+
+local function kitPath(): string
+	return settingString("GreebleKitPath") or DEFAULT_KIT_PATH
+end
+
+---------------------------------------------------------------------------
+-- Settings and status widget
 
 local toolbar = plugin:CreateToolbar("Greeble")
 local button = toolbar:CreateButton("Dress zone", "Place kit assets in GreebleZone", "")
+local listenButton = toolbar:CreateButton("Listen", "Run jobs sent to Greeble by your agent", "")
+local settingsButton = toolbar:CreateButton("Settings", "Server URL, key, kit folder and last status", "")
+
+local widget = plugin:CreateDockWidgetPluginGui(
+	"GreebleSettings",
+	DockWidgetPluginGuiInfo.new(Enum.InitialDockState.Float, false, false, 320, 260, 260, 220)
+)
+widget.Title = "Greeble"
+
+local root = Instance.new("Frame")
+root.Size = UDim2.fromScale(1, 1)
+root.BackgroundTransparency = 1
+root.Parent = widget
+
+local padding = Instance.new("UIPadding")
+padding.PaddingTop = UDim.new(0, 8)
+padding.PaddingBottom = UDim.new(0, 8)
+padding.PaddingLeft = UDim.new(0, 8)
+padding.PaddingRight = UDim.new(0, 8)
+padding.Parent = root
+
+local layout = Instance.new("UIListLayout")
+layout.SortOrder = Enum.SortOrder.LayoutOrder
+layout.Padding = UDim.new(0, 4)
+layout.Parent = root
+
+local order = 0
+local function nextOrder(): number
+	order += 1
+	return order
+end
+
+local function label(text: string): TextLabel
+	local l = Instance.new("TextLabel")
+	l.Size = UDim2.new(1, 0, 0, 16)
+	l.BackgroundTransparency = 1
+	l.TextXAlignment = Enum.TextXAlignment.Left
+	l.Font = Enum.Font.SourceSans
+	l.TextSize = 14
+	l.TextColor3 = Color3.fromRGB(200, 200, 200)
+	l.Text = text
+	l.LayoutOrder = nextOrder()
+	l.Parent = root
+	return l
+end
+
+local function field(caption: string, placeholder: string): TextBox
+	label(caption)
+	local box = Instance.new("TextBox")
+	box.Size = UDim2.new(1, 0, 0, 24)
+	box.BackgroundColor3 = Color3.fromRGB(46, 46, 46)
+	box.BorderColor3 = Color3.fromRGB(80, 80, 80)
+	box.TextColor3 = Color3.fromRGB(230, 230, 230)
+	box.PlaceholderColor3 = Color3.fromRGB(130, 130, 130)
+	box.TextXAlignment = Enum.TextXAlignment.Left
+	box.Font = Enum.Font.SourceSans
+	box.TextSize = 14
+	box.ClearTextOnFocus = false
+	box.PlaceholderText = placeholder
+	box.Text = ""
+	box.LayoutOrder = nextOrder()
+	box.Parent = root
+	return box
+end
+
+local urlBox = field("Server URL", "https://greeble.example.com")
+local keyBox = field("Key", "paste key")
+local kitBox = field("Kit folder path", DEFAULT_KIT_PATH)
+
+local saveButton = Instance.new("TextButton")
+saveButton.Size = UDim2.new(1, 0, 0, 26)
+saveButton.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+saveButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+saveButton.Font = Enum.Font.SourceSansBold
+saveButton.TextSize = 14
+saveButton.Text = "Save"
+saveButton.LayoutOrder = nextOrder()
+saveButton.Parent = root
+
+local statusLabel = label("")
+statusLabel.Size = UDim2.new(1, 0, 0, 60)
+statusLabel.TextWrapped = true
+statusLabel.TextYAlignment = Enum.TextYAlignment.Top
+
+local function setStatus(text: string, isError: boolean?)
+	statusLabel.Text = text
+	statusLabel.TextColor3 = if isError then Color3.fromRGB(255, 110, 110) else Color3.fromRGB(140, 220, 140)
+	if isError then warn("Greeble: " .. text) end
+end
+
+-- The key box never shows the saved key; leaving it blank keeps the saved one.
+local function loadFields()
+	urlBox.Text = settingString("GreebleUrl") or ""
+	keyBox.Text = ""
+	keyBox.PlaceholderText = if settingString("GreebleKey") then "saved (leave blank to keep)" else "paste key"
+	kitBox.Text = settingString("GreebleKitPath") or DEFAULT_KIT_PATH
+end
+loadFields()
+
+saveButton.MouseButton1Click:Connect(function()
+	local url = stripSlash(trim(urlBox.Text))
+	local key = trim(keyBox.Text)
+	local path = stripSlash(trim(kitBox.Text))
+	plugin:SetSetting("GreebleUrl", url)
+	if key ~= "" then plugin:SetSetting("GreebleKey", key) end
+	plugin:SetSetting("GreebleKitPath", if path ~= "" then path else DEFAULT_KIT_PATH)
+	loadFields()
+	setStatus("Settings saved.")
+end)
+
+settingsButton.Click:Connect(function()
+	widget.Enabled = not widget.Enabled
+end)
+widget:GetPropertyChangedSignal("Enabled"):Connect(function()
+	settingsButton:SetActive(widget.Enabled)
+end)
+
+---------------------------------------------------------------------------
+-- Zone sampling and kit
 
 local function v3(v: Vector3) return { v.X, v.Y, v.Z } end
 
@@ -48,6 +194,19 @@ local function sampleSurface(zone: BasePart)
 	return hits
 end
 
+-- Walk a slash-separated path from `game`, e.g. "ServerStorage/GreebleKit".
+local function findKit(): Instance
+	local path = kitPath()
+	local node: Instance? = game
+	for segment in path:gmatch("[^/]+") do
+		node = if node then node:FindFirstChild(segment) else nil
+	end
+	if not node or node == game then
+		fail("Kit folder not found at " .. path .. ". Check the kit path in Settings.")
+	end
+	return node :: Instance
+end
+
 local function readKit(kit: Instance)
 	local assets, byId = {}, {}
 	for _, child in kit:GetChildren() do
@@ -60,103 +219,163 @@ local function readKit(kit: Instance)
 	return assets, byId
 end
 
-local function request(method: string, path: string, body: any?)
-	local url = plugin:GetSetting("GreebleUrl")
-	local key = plugin:GetSetting("GreebleKey")
-	assert(url and key, "Set GreebleUrl and GreebleKey first")
-	local res = HttpService:RequestAsync({
-		Url = url .. path,
-		Method = method,
-		Headers = { ["Content-Type"] = "application/json", Authorization = "Bearer " .. key },
-		Body = if body then HttpService:JSONEncode(body) else nil,
-	})
-	assert(res.Success, "Greeble server: " .. tostring(res.StatusCode))
-	return HttpService:JSONDecode(res.Body)
+---------------------------------------------------------------------------
+-- HTTP
+
+local function request(method: string, path: string, body: any?): any
+	local url = settingString("GreebleUrl")
+	local key = settingString("GreebleKey")
+	if not url or not key then fail("Set the server URL and key in Settings first.") end
+	local base = stripSlash(url :: string)
+
+	local ok, res = pcall(function()
+		return HttpService:RequestAsync({
+			Url = base .. path,
+			Method = method,
+			Headers = { ["Content-Type"] = "application/json", Authorization = "Bearer " .. (key :: string) },
+			Body = if body then HttpService:JSONEncode(body) else nil,
+		})
+	end)
+	if not ok then
+		fail(("Could not reach %s: %s"):format(base, tostring(res)))
+	end
+
+	if not res.Success then
+		local decoded, data = pcall(HttpService.JSONDecode, HttpService, res.Body)
+		if decoded and type(data) == "table" and type(data.error) == "string" then
+			fail(("Server error %d: %s"):format(res.StatusCode, data.error))
+		end
+		fail(("Server error %d %s"):format(res.StatusCode, tostring(res.StatusMessage)))
+	end
+
+	local decoded, data = pcall(HttpService.JSONDecode, HttpService, res.Body)
+	if not decoded then fail("Server sent a reply that is not JSON (" .. method .. " " .. path .. ")") end
+	return data
 end
 
-local function post(path: string, body: any)
+local function post(path: string, body: any): any
 	return request("POST", path, body)
 end
+
+---------------------------------------------------------------------------
+-- Dress
 
 -- opts come from a queued job; a button click passes none.
 local function dress(opts: { zone: string?, maxInstances: number?, seed: number? }?)
 	local o = opts or {}
 	local zoneName = o.zone or "GreebleZone"
 	local zone = workspace:FindFirstChild(zoneName)
-	local kit = ServerStorage:FindFirstChild("GreebleKit")
-	assert(zone and zone:IsA("BasePart"), "No zone Part named " .. zoneName)
-	assert(kit, "Add a Folder named GreebleKit to ServerStorage")
+	if not (zone and zone:IsA("BasePart")) then fail("No zone Part named " .. zoneName .. " in Workspace.") end
+	local kit = findKit()
 
 	local assets, byId = readKit(kit)
+	if #assets == 0 then fail("Kit folder at " .. kitPath() .. " has no Models.") end
 	local keepClear = {}
 	for _, part in CollectionService:GetTagged("GreebleKeepClear") do
 		if part:IsA("BasePart") then table.insert(keepClear, boxOf(part)) end
 	end
 	local profileJson = plugin:GetSetting("GreebleProfile")
-	assert(profileJson, "No style profile saved yet")
+	if not profileJson then fail("No style profile saved yet.") end
+	local okProfile, profile = pcall(HttpService.JSONDecode, HttpService, profileJson)
+	if not okProfile then fail("Saved style profile is not valid JSON.") end
 
+	local zonePart = zone :: BasePart
 	local result = post("/v1/place", {
-		zone = { id = zone:GetAttribute("ZoneId") or "zone", label = zone:GetAttribute("Label") or "" },
-		surface = sampleSurface(zone :: BasePart),
+		zone = { id = zonePart:GetAttribute("ZoneId") or "zone", label = zonePart:GetAttribute("Label") or "" },
+		surface = sampleSurface(zonePart),
 		cell = CELL,
 		assets = assets,
 		keepClear = keepClear,
-		profile = HttpService:JSONDecode(profileJson),
-		budget = { maxInstances = o.maxInstances or zone:GetAttribute("MaxInstances") or 500 },
-		seed = o.seed or zone:GetAttribute("Seed") or 1,
+		profile = profile,
+		budget = { maxInstances = o.maxInstances or zonePart:GetAttribute("MaxInstances") or 500 },
+		seed = o.seed or zonePart:GetAttribute("Seed") or 1,
 	})
 
 	local recording = ChangeHistoryService:TryBeginRecording("Greeble: dress zone")
-	local root = workspace:FindFirstChild("Greeble") or Instance.new("Folder")
-	root.Name = "Greeble"
-	root.Parent = workspace
-	local folder = Instance.new("Folder")
-	folder.Name = (zone:GetAttribute("ZoneId") or "zone") :: string
-	folder.Parent = root
+	local ok, err = pcall(function()
+		local outRoot = workspace:FindFirstChild("Greeble") or Instance.new("Folder")
+		outRoot.Name = "Greeble"
+		outRoot.Parent = workspace
+		local folder = Instance.new("Folder")
+		folder.Name = (zonePart:GetAttribute("ZoneId") or "zone") :: string
+		folder.Parent = outRoot
 
-	for _, p in result.placements do
-		local source = byId[p.assetId]
-		if source then
-			local clone = source:Clone()
-			clone:ScaleTo(p.scale)
-			local height = clone:GetExtentsSize().Y / 2
-			local pos = Vector3.new(p.position[1], p.position[2] + height, p.position[3])
-			clone:PivotTo(CFrame.new(pos) * CFrame.Angles(0, p.rotationY, 0))
-			clone.Parent = folder
+		for _, p in result.placements do
+			local source = byId[p.assetId]
+			if source then
+				local clone = source:Clone()
+				clone:ScaleTo(p.scale)
+				local height = clone:GetExtentsSize().Y / 2
+				local pos = Vector3.new(p.position[1], p.position[2] + height, p.position[3])
+				clone:PivotTo(CFrame.new(pos) * CFrame.Angles(0, p.rotationY, 0))
+				clone.Parent = folder
+			end
 		end
-	end
+	end)
 	if recording then
-		ChangeHistoryService:FinishRecording(recording, Enum.FinishRecordingOperation.Commit)
+		ChangeHistoryService:FinishRecording(
+			recording,
+			if ok then Enum.FinishRecordingOperation.Commit else Enum.FinishRecordingOperation.Cancel
+		)
 	end
-	print(("Greeble placed %d instances"):format(result.stats.placed))
+	if not ok then fail("Placing instances failed: " .. tostring(err)) end
+
+	local placed = result.stats and result.stats.placed or 0
+	setStatus(("Placed %d instances in %s. Undo with Ctrl+Z."):format(placed, zoneName))
 	return result.stats
 end
 
 button.Click:Connect(function()
+	setStatus("Dressing zone...")
 	local ok, err = pcall(dress)
-	if not ok then warn(err) end
+	if not ok then setStatus("Dress failed: " .. tostring(err), true) end
 end)
 
+---------------------------------------------------------------------------
 -- Listening mode: pick up jobs queued by an agent or the chat panel.
-local listenButton = toolbar:CreateButton("Listen", "Run jobs sent to Greeble by your agent", "")
+
 local listening = false
 
 local function runJob(job)
+	setStatus("Running job " .. tostring(job.id) .. "...")
 	local ok, out = pcall(function()
 		if job.type == "dress_zone" then return dress(job.params) end
-		error("unknown job type " .. tostring(job.type))
+		fail("unknown job type " .. tostring(job.type))
 	end)
-	pcall(post, "/v1/jobs/" .. job.id .. "/result", { ok = ok, result = if ok then out else { error = tostring(out) } })
+	if not ok then setStatus("Job " .. tostring(job.id) .. " failed: " .. tostring(out), true) end
+	local sent, sendErr = pcall(post, "/v1/jobs/" .. job.id .. "/result", {
+		ok = ok,
+		result = if ok then out else { error = tostring(out) },
+	})
+	if not sent then setStatus("Could not report job " .. tostring(job.id) .. ": " .. tostring(sendErr), true) end
 end
 
 listenButton.Click:Connect(function()
 	listening = not listening
 	listenButton:SetActive(listening)
-	if not listening then return end
+	if not listening then
+		setStatus("Stopped listening.")
+		return
+	end
+	setStatus("Listening for jobs...")
 	task.spawn(function()
+		local lastError: string? = nil
 		while listening do
 			local ok, res = pcall(request, "GET", "/v1/jobs/next")
-			if ok and res.job then runJob(res.job) elseif not ok then warn(res) end
+			if ok then
+				if lastError then
+					lastError = nil
+					setStatus("Listening for jobs...")
+				end
+				if res and res.job then runJob(res.job) end
+			else
+				local msg = "Listen failed: " .. tostring(res)
+				-- Only report a repeated error once, so Output is not flooded.
+				if msg ~= lastError then
+					lastError = msg
+					setStatus(msg, true)
+				end
+			end
 			task.wait(2)
 		end
 	end)
