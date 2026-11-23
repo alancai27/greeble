@@ -17,7 +17,8 @@ html { background: var(--paper); }
 body {
   margin: 0;
   position: relative;
-  background: var(--paper);
+  /* transparent so the fixed 3D stage behind the page shows through */
+  background: none;
   color: var(--ink);
   font-family: var(--body);
   font-size: 18px;
@@ -36,7 +37,6 @@ body {
   margin: 0; font-family: var(--display); font-weight: 800; line-height: 1;
   font-size: min(17.5vw, 250px); letter-spacing: -0.03em;
 }
-.baseline-probe { display: inline-block; width: 0; height: 0; }
 .hero-row {
   margin-top: clamp(150px, 26vh, 260px);
   display: flex; flex-wrap: wrap; gap: 20px 40px; align-items: end; justify-content: space-between;
@@ -56,23 +56,3 @@ body {
 }
 .install:hover { background: #2c3557; }
 .install:focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
-
-/* World 1: starts as a studded plate; the figure lands on the stud tops. */
-#world-1 { min-height: 70vh; background: linear-gradient(#eef5ec, var(--paper) 60vh); }
-.strip {
-  height: 30px;
-  background:
-    /* stud highlights */
-    radial-gradient(circle at calc(50% - 3px) 7px, rgba(255, 255, 255, 0.45) 0 2.5px, transparent 3px)
-      0 0 / var(--stud) 10px repeat-x,
-    /* studs: round domes sitting on the plate */
-    radial-gradient(circle at 50% 10px, var(--turf-lit) 0 8px, var(--turf-dark) 8px 9px, transparent 9.5px)
-      0 0 / var(--stud) 10px repeat-x,
-    /* plate: lit top edge, body, shaded bottom edge */
-    linear-gradient(var(--turf-lit) 0 4px, var(--turf) 4px calc(100% - 4px), var(--turf-dark) calc(100% - 4px))
-      0 10px / 100% 20px no-repeat;
-}
-
-/* figure overlay */
-.figure-layer { position: absolute; top: 0; left: 0; width: 0; height: 0; overflow: visible; pointer-events: none; z-index: 5; }
-.figure-layer svg { overflow: visible; display: block; }
