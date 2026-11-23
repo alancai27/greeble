@@ -37,13 +37,15 @@ export function route(key, method, url, body) {
     validatePlace(body);
     const zones = getProfile(key)?.zones ?? {};
     const label = zoneKey(body?.zone?.label);
-    const style = zones[label] ?? zones.default;
+    const used = zones[label] ? label : "default";
+    const style = zones[used];
     if (!style) {
       const learned = Object.keys(zones).sort().join(", ") || "none";
       return [409, { error: `no profile for label "${label}"; learned labels: ${learned}` }];
     }
     const { profile: _ignored, ...req } = body;
-    return [200, place({ ...req, profile: style })];
+    const out = place({ ...req, profile: style });
+    return [200, { ...out, stats: { ...out.stats, label: used } }];
   }
   const job = finishJob(key, m[1], body);
   return [200, { status: job.status }];

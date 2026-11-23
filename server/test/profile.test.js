@@ -94,3 +94,21 @@ test("no-profile error never names another key's labels", () => {
   assert.equal(body.error, 'no profile for label "market"; learned labels: harbor');
   assert.ok(!body.error.includes("forest"));
 });
+
+test("stats.label names the zone's own label when it has a style", () => {
+  post("a", "/v1/profile", { zones: [{ label: "market", area: 64, instances: row("Barrel", 8, 2) }] });
+  assert.equal(post("a", "/v1/place", placeReq("Market"))[1].stats.label, "market");
+});
+
+test("stats.label is default when the zone's label fell back", () => {
+  post("a", "/v1/profile", { zones: [{ area: 64, instances: row("Tree", 8, 4) }] });
+  assert.equal(post("a", "/v1/place", placeReq("market"))[1].stats.label, "default");
+});
+
+test("stats.label is default for a zone with no label", () => {
+  post("a", "/v1/profile", { zones: [
+    { label: "market", area: 64, instances: row("Barrel", 8, 2) },
+    { area: 64, instances: row("Tree", 8, 4) },
+  ] });
+  assert.equal(post("a", "/v1/place", { ...placeReq(), zone: { id: "z2" } })[1].stats.label, "default");
+});
