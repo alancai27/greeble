@@ -161,20 +161,73 @@ test("no two circles overlap, with mixed scales", () => {
   }
 });
 
-test("an asset wider than half the zone is left out and reported", () => {
-  // Zone is 124 wide; half is 62. A Tower of footprint 20 at scale 1 is 40 wide: fits.
-  // Scaled to 1.6 it is 64 wide: too large.
-  const big = { ...mixed, assets: { ...mixed.assets, Tower: { density: 4 / 4096, scaleMin: 1.6, scaleMax: 1.6, spacing: 0 }, Arch: { density: 4 / 4096, scaleMin: 1, scaleMax: 2, spacing: 0 } } };
+test("an asset wider than the zone's shorter side is left out and reported", () => {
+  // Zone is 124 wide. A Tower of footprint 20 at scale 3.2 is 128 wide: too large.
+  // An Arch at scale 1.6 is 64 wide: over half the side, but it now fits.
+  const big = { ...mixed, assets: { ...mixed.assets, Tower: { density: 4 / 4096, scaleMin: 3.2, scaleMax: 3.2, spacing: 0 }, Arch: { density: 1 / 4096, scaleMin: 1.6, scaleMax: 1.6, spacing: 0 } } };
   const assets = [...base.assets, { id: "Tower", footprint: 20 }, { id: "Arch", footprint: 20 }];
-  const plain = place({ ...mixedBase, seed: 3 });
   for (const seed of seeds) {
     const { placements, stats } = place({ ...mixedBase, profile: big, assets, seed });
-    assert.deepEqual(stats.tooLarge, ["Arch", "Tower"]);
-    assert.ok(!placements.some((p) => p.assetId === "Tower" || p.assetId === "Arch"));
+    assert.deepEqual(stats.tooLarge, ["Tower"]);
+    assert.ok(!placements.some((p) => p.assetId === "Tower"));
+    assert.ok(placements.some((p) => p.assetId === "Arch"), `seed ${seed}: no Arch`);
     assert.ok(placements.filter((p) => p.assetId === "Barrel").length > 0);
-    assert.ok(placements.length >= plain.placements.length * 0.9, `seed ${seed}: only ${placements.length}`);
   }
-  assert.deepEqual(plain.stats.tooLarge, []);
+  assert.deepEqual(place({ ...mixedBase, seed: 3 }).stats.tooLarge, []);
+});
+
+// Hand-built styles with clearance: crowns overlap like a real forest.
+const forestFp = { Pine: 5, Bush: 2 };
+const forestAssets = [{ id: "Pine", footprint: 5 }, { id: "Bush", footprint: 2 }];
+const forest = (pine, bush) => ({ assets: {
+  Pine: { density: 300 / 16384, scaleMin: 0.9, scaleMax: 1.1, spacing: 4, clearance: 3, ...pine },
+  Bush: { density: 200 / 16384, scaleMin: 0.8, scaleMax: 1.2, spacing: 3, clearance: 2, ...bush },
+} });
+const forestReq = (profile, seed) => ({ surface: grid(32, 4), cell: 4, profile, seed, assets: forestAssets });
+const pairs = (placements, fn) => {
+  for (let i = 0; i < placements.length; i++) for (let j = i + 1; j < placements.length; j++) {
+    const a = placements[i], b = placements[j];
+    fn(a, b, Math.hypot(a.position[0] - b.position[0], a.position[2] - b.position[2]));
+  }
+};
+
+test("clearance under the footprints lets an asset reach its density target", () => {
+  const target = Math.round(forest().assets.Pine.density * 1024 * 16);
+  for (const seed of seeds) {
+    const count = (profile) => place(forestReq(profile, seed)).placements.filter((p) => p.assetId === "Pine").length;
+    assert.equal(count(forest()), target, `seed ${seed}`);
+    assert.ok(count(forest({ clearance: 0 }, { clearance: 0 })) < target * 0.6, `seed ${seed}: circles alone reach it`);
+  }
+});
+
+test("spacing between props follows clearance and spacing", () => {
+  const profile = forest({ clearance: 6, spacing: 7 }, { clearance: 3, spacing: 4 });
+  for (const seed of seeds) {
+    const { placements } = place(forestReq(profile, seed));
+    assert.ok(placements.some((p) => p.assetId === "Bush") && placements.some((p) => p.assetId === "Pine"));
+    pairs(placements, (a, b, d) => {
+      const ra = forestFp[a.assetId] * a.scale, rb = forestFp[b.assetId] * b.scale;
+      const sa = profile.assets[a.assetId], sb = profile.assets[b.assetId];
+      const min = a.assetId === b.assetId ? 0.6 * sa.spacing : Math.min(ra + rb, (sa.clearance + sb.clearance) / 2);
+      assert.ok(d >= min - eps, `seed ${seed}: ${a.assetId}-${b.assetId} at ${d} < ${min}`);
+    });
+  }
+});
+
+test("clearance 0 or missing keeps circles from overlapping", () => {
+  const { clearance: _p, ...pine } = forest().assets.Pine;
+  const { clearance: _b, ...bush } = forest().assets.Bush;
+  for (const profile of [forest({ clearance: 0 }, { clearance: 0 }), { assets: { Pine: pine, Bush: bush } }, forest({ clearance: 0 })]) {
+    for (const seed of seeds) {
+      const { placements } = place(forestReq(profile, seed));
+      assert.ok(placements.length > 0);
+      pairs(placements, (a, b, d) => {
+        const ra = forestFp[a.assetId] * a.scale, rb = forestFp[b.assetId] * b.scale;
+        const free = a.assetId === b.assetId && profile.assets[a.assetId].clearance > 0;
+        if (!free) assert.ok(d >= ra + rb - eps, `seed ${seed}: ${a.assetId}-${b.assetId} overlap ${d}`);
+      });
+    }
+  }
 });
 
 test("same seed still gives the same result with footprint rules", () => {
