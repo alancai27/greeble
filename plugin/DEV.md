@@ -21,8 +21,7 @@ file there does nothing until a restart. These were tried over the Studio MCP se
        fn()
        return game:GetService("CoreGui").GreebleTestHook:Invoke("status")
 
-2. Run it with `execute_luau` (Edit). The new build replaces `GreebleTestHook`; call it as usual.
-3. To load another change, run step 1 again with the new file.
+2. Run it with `execute_luau` (Edit). The new build replaces `GreebleTestHook`. Repeat per change.
 
 Limits: the installed plugin keeps its toolbar but loses its hook until Studio restarts, and
 `Unloading` never fires for the dev copy, so stop listening (`listen`, on = false) before
