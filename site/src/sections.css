@@ -3,6 +3,7 @@
    style.css reads --turf*, so each world maps its ground onto those. */
 
 #world-1 {
+  --sky: #ffffff;
   --ink: #1b2238;
   --ink-soft: #3f4766;
 }
@@ -42,18 +43,53 @@
   background: var(--sky);
 }
 
-#world-1, #world-2, #world-3, #world-4 {
-  color: var(--ink);
-  padding-bottom: clamp(64px, 12vh, 140px);
-}
+#world-1, #world-2, #world-3, #world-4 { color: var(--ink); }
 
-/* Room for a world illustration, mounted by another issue. */
-.art { height: clamp(160px, 28vh, 320px); }
+/* Layout. Narrow: the world stands in the art band, the copy is a card below it.
+   Wide (1024px and up): world and copy each take a half, alternating sides.
+   scene.ts reads .art to place the world, so keep it in the flow on narrow screens. */
+#world-1, #world-2, #world-3, #world-4 {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: var(--gutter);
+}
+.art { flex: 1 0 auto; min-height: clamp(260px, 44svh, 520px); }
 
 .copy {
-  padding: 0 var(--gutter);
-  max-width: calc(60ch + 2 * var(--gutter));
+  position: relative;
+  margin: 0 calc(var(--gutter) - 4px);
+  padding: 20px clamp(16px, 4vw, 28px) 8px;
+  max-width: 60ch;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--sky, #ffffff) 88%, transparent);
 }
+
+/* The scene paints the sky on <html> and blends it between sections. */
+.has-stage #world-1, .has-stage #world-2, .has-stage #world-3, .has-stage #world-4,
+.has-stage .site-footer { background: none; }
+
+@media (min-width: 1024px) {
+  #world-1, #world-2, #world-3, #world-4 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    padding: var(--gutter) 0;
+  }
+  .strip, .art { display: none; }
+  .copy {
+    grid-row: 1;
+    justify-self: center;
+    margin: 0;
+    padding: 0 var(--gutter);
+    max-width: min(100%, calc(60ch + 2 * var(--gutter)));
+    background: none;
+  }
+  #world-1 .copy, #world-3 .copy { grid-column: 1; }
+  #world-2 .copy, #world-4 .copy { grid-column: 2; }
+  /* The last world (left) stays behind the footer; its text takes the right half. */
+  .has-stage .site-footer { padding-left: calc(50% + var(--gutter)); }
+}
+
 .copy h2 {
   margin: 0 0 0.6em;
   font-family: var(--display);
@@ -64,7 +100,6 @@
 }
 .copy p {
   margin: 0 0 1em;
-  max-width: 60ch;
   font-size: clamp(18px, 1.4vw, 21px);
   color: var(--ink-soft);
 }
@@ -88,3 +123,5 @@ html { scroll-snap-type: y mandatory; }
 /* The footer is a full screen too, so its snap point is reachable and the
    corner mark never rests over the last section's copy. */
 .site-footer { min-height: 100svh; display: flex; flex-direction: column; justify-content: center; }
+/* Narrow: the last world stays in the upper part, so the footer text sits low. */
+@media (max-width: 1023.98px) { .has-stage .site-footer { justify-content: flex-end; } }
