@@ -182,3 +182,4 @@ permissions. The installer must ask before each of those and default to off.
 - 2026-11-23: The dev's agent reads its key from the `GREEBLE_KEY` environment variable through the MCP entry's header; the key is never written into a config file or the pack.
 - 2026-11-23: Pack layout is in `docs/contracts.md`. Workers on pack issues may read only the line range of `pack/source/workflow-brief.md` their issue names, since a section is too long to paste.
 - 2026-11-23: The planning lead leads platform. Pack has no lead until the human starts one.
+- 2026-11-23: The pack installer targets macOS first (human's call), replacing "Windows first". It is a shell script tested on the human's Mac; the PowerShell versions of the installer and the Luau hook wait until a Windows user needs them. The pack lead is running.
