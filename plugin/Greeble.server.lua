@@ -341,9 +341,22 @@ local function dress(opts: { zone: string?, maxInstances: number?, seed: number?
 			if source then
 				local clone = source:Clone()
 				clone:ScaleTo(p.scale)
-				local height = clone:GetExtentsSize().Y / 2
-				local pos = Vector3.new(p.position[1], p.position[2] + height, p.position[3])
-				clone:PivotTo(CFrame.new(pos) * CFrame.Angles(0, p.rotationY, 0))
+				local target = Vector3.new(p.position[1], p.position[2], p.position[3])
+				-- Rotate in place first, then move so the bounding-box bottom centre sits on target.
+				-- The pivot can be anywhere (centre, base, off to one side), so never place by it.
+				clone:PivotTo(CFrame.new(clone:GetPivot().Position) * CFrame.Angles(0, p.rotationY, 0))
+				local box, size = clone:GetBoundingBox()
+				local half = size / 2
+				local bottomY = math.huge
+				for _, sx in { -1, 1 } do
+					for _, sy in { -1, 1 } do
+						for _, sz in { -1, 1 } do
+							bottomY = math.min(bottomY, box:PointToWorldSpace(Vector3.new(sx * half.X, sy * half.Y, sz * half.Z)).Y)
+						end
+					end
+				end
+				local bottom = Vector3.new(box.Position.X, bottomY, box.Position.Z)
+				clone:PivotTo(clone:GetPivot() + (target - bottom))
 				clone.Parent = folder
 				count += 1
 			end
