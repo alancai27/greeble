@@ -89,3 +89,95 @@ test("placements stay inside the sampled zone's XZ bounds", () => {
     }
   }
 });
+
+// Footprint rules: every prop is a circle of radius footprint * scale in XZ.
+const seeds = [1, 2, 3, 7, 42, 99];
+const eps = 1e-9;
+// Barrels at 0.5..2 scale so neighbouring circles have mixed radii.
+const mixed = learnProfile({
+  instances: [
+    ...Array.from({ length: 60 }, (_, i) => ({ assetId: "Barrel", position: [(i % 10) * 6, 0, Math.floor(i / 10) * 6], scale: 0.5 + (i % 4) * 0.5 })),
+    ...Array.from({ length: 6 }, (_, i) => ({ assetId: "Tree", position: [i * 20, 0, 60], scale: 0.8 + (i % 2) * 0.4 })),
+  ],
+  area: 64 * 64,
+});
+const mixedBase = { ...base, profile: mixed };
+const fp = { Barrel: 1.5, Tree: 5, Tower: 20 };
+const radius = (p) => fp[p.assetId] * p.scale;
+const rectDist = (x, z, b) => Math.hypot(Math.max(b.min[0] - x, 0, x - b.max[0]), Math.max(b.min[2] - z, 0, z - b.max[2]));
+
+test("no circle crosses the zone bounds", () => {
+  for (const seed of seeds) {
+    const { placements } = place({ ...mixedBase, seed });
+    assert.ok(placements.length > 0);
+    for (const p of placements) {
+      const [x, , z] = p.position, r = radius(p);
+      assert.ok(x - r >= -eps && x + r <= 124 + eps && z - r >= -eps && z + r <= 124 + eps,
+        `seed ${seed}: ${p.assetId} r ${r} at ${x}, ${z}`);
+    }
+  }
+});
+
+test("no circle touches a keep-clear box", () => {
+  const box = { min: [40, -5, -10], max: [60, 5, 140] };
+  for (const seed of seeds) {
+    const { placements, stats } = place({ ...mixedBase, seed, keepClear: [box] });
+    assert.ok(stats.skippedKeepClear > 0 && placements.length > 0);
+    for (const p of placements) {
+      const d = rectDist(p.position[0], p.position[2], box);
+      assert.ok(d > radius(p), `seed ${seed}: ${p.assetId} r ${radius(p)} is ${d} from the box`);
+    }
+  }
+});
+
+test("a keep-clear box above the props' height does not block them", () => {
+  const box = { min: [40, 10, -10], max: [60, 20, 140] };
+  const a = place({ ...mixedBase, keepClear: [box] });
+  assert.equal(a.stats.skippedKeepClear, 0);
+  assert.deepEqual(a.placements, place(mixedBase).placements);
+});
+
+test("no circle covers a steep hit", () => {
+  const steep = halfSteep.filter((h) => h.position[0] >= 64).map((h) => h.position);
+  for (const seed of seeds) {
+    const { placements, stats } = place({ ...mixedBase, seed, surface: halfSteep });
+    assert.ok(stats.skippedSlope >= steepCount && placements.length > 0);
+    for (const p of placements) for (const s of steep) {
+      const d = Math.hypot(p.position[0] - s[0], p.position[2] - s[2]);
+      assert.ok(d > radius(p), `seed ${seed}: ${p.assetId} covers steep hit at ${s[0]}, ${s[2]}`);
+    }
+  }
+});
+
+test("no two circles overlap, with mixed scales", () => {
+  for (const seed of seeds) {
+    const { placements } = place({ ...mixedBase, seed });
+    assert.ok(new Set(placements.map((p) => p.scale)).size > 3, "scales should vary");
+    for (let i = 0; i < placements.length; i++) for (let j = i + 1; j < placements.length; j++) {
+      const a = placements[i], b = placements[j];
+      const d = Math.hypot(a.position[0] - b.position[0], a.position[2] - b.position[2]);
+      assert.ok(d >= radius(a) + radius(b) - eps, `seed ${seed}: overlap ${d} < ${radius(a) + radius(b)}`);
+    }
+  }
+});
+
+test("an asset wider than half the zone is left out and reported", () => {
+  // Zone is 124 wide; half is 62. A Tower of footprint 20 at scale 1 is 40 wide: fits.
+  // Scaled to 1.6 it is 64 wide: too large.
+  const big = { ...mixed, assets: { ...mixed.assets, Tower: { density: 4 / 4096, scaleMin: 1.6, scaleMax: 1.6, spacing: 0 }, Arch: { density: 4 / 4096, scaleMin: 1, scaleMax: 2, spacing: 0 } } };
+  const assets = [...base.assets, { id: "Tower", footprint: 20 }, { id: "Arch", footprint: 20 }];
+  const plain = place({ ...mixedBase, seed: 3 });
+  for (const seed of seeds) {
+    const { placements, stats } = place({ ...mixedBase, profile: big, assets, seed });
+    assert.deepEqual(stats.tooLarge, ["Arch", "Tower"]);
+    assert.ok(!placements.some((p) => p.assetId === "Tower" || p.assetId === "Arch"));
+    assert.ok(placements.filter((p) => p.assetId === "Barrel").length > 0);
+    assert.ok(placements.length >= plain.placements.length * 0.9, `seed ${seed}: only ${placements.length}`);
+  }
+  assert.deepEqual(plain.stats.tooLarge, []);
+});
+
+test("same seed still gives the same result with footprint rules", () => {
+  const req = { ...mixedBase, surface: halfSteep, keepClear: [{ min: [40, -5, -10], max: [60, 5, 140] }] };
+  assert.deepEqual(place(req), place(req));
+});
