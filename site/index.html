@@ -13,6 +13,7 @@
     />
     <link rel="stylesheet" href="/src/sections.css" />
     <link rel="stylesheet" href="/src/brand.css" />
+    <link rel="stylesheet" href="/src/content.css" />
   </head>
   <body>
     <a class="brand-mark" href="#top" aria-label="Greeble, back to top">
@@ -25,32 +26,67 @@
         <a class="install" href="#install">Install the Studio plugin</a>
       </div>
     </header>
-    <section id="world-1" aria-label="Your first world">
+    <section id="world-1" aria-label="What Greeble does">
       <div class="strip"></div>
       <div class="art" aria-hidden="true"></div>
       <div class="copy">
         <h2>Block it out. Greeble dresses it.</h2>
-        <p>Rough in a zone with plain parts, select it and press Dress. Greeble fills it with trees, rocks, fences and props from your own asset library, placed the way your team would place them.</p>
-        <p>Nothing is generated from scratch. Every piece is something you already own, so the map looks like your game from the first pass.</p>
+        <p>Greeble is a Roblox Studio plugin that places props and detail on a blocked-out map, using your studio's own asset kit.</p>
+        <ul class="features">
+          <li><strong>Learn style.</strong> Select a finished map and Greeble reads how your team dresses a place.</li>
+          <li><strong>Dress.</strong> Select a blocked-out zone and Greeble applies that style with your own assets. It leaves steep slopes alone.</li>
+          <li><strong>Edit.</strong> What it places are normal Studio instances. Move them, delete them, or undo the whole pass.</li>
+        </ul>
+        <figure class="demo">
+          <!-- To add the video, replace the .demo-frame div with
+               <video class="demo-media" src="..." controls playsinline preload="none" poster="..."></video>
+               or <iframe class="demo-media" src="..." title="..." allowfullscreen></iframe>.
+               .demo-media fills the same 16:9 box; then drop the "coming soon" caption. -->
+          <div class="demo-frame" role="img" aria-label="Demo video placeholder">
+            <svg class="demo-play" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><circle cx="24" cy="24" r="23" fill="none" stroke="currentColor" stroke-width="2"/><path d="M19 15v18l15-9z" fill="currentColor"/></svg>
+          </div>
+          <figcaption>Demo video coming soon</figcaption>
+        </figure>
       </div>
     </section>
 
-    <section id="world-2" aria-label="Packs and workflow">
+    <section id="world-2" aria-label="The Greeble pack">
       <div class="strip"></div>
       <div class="art" aria-hidden="true"></div>
       <div class="copy">
-        <h2>Your pack, your style, your workflow</h2>
-        <p>Point Greeble at a finished map and it learns your style: what goes near paths, how dense the edges get, which props cluster together. Point it at a folder of models and that becomes the pack it draws from.</p>
-        <p>Dress a zone, keep what works, undo what doesn't. It all happens inside Studio, with the usual history and no export step.</p>
+        <h2>Bring your own agent</h2>
+        <p>The Greeble pack plugs into the coding agent you already use, such as Claude Code. Your agent drives Studio; the plugin listens and does the placing.</p>
+        <p>Ask for a zone to be dressed in the same breath as the rest of your work. Greeble never generates meshes: every piece comes from your asset kit.</p>
+        <figure class="demo">
+          <!-- To add the video, replace the .demo-frame div with
+               <video class="demo-media" src="..." controls playsinline preload="none" poster="..."></video>
+               or <iframe class="demo-media" src="..." title="..." allowfullscreen></iframe>.
+               .demo-media fills the same 16:9 box; then drop the "coming soon" caption. -->
+          <div class="demo-frame" role="img" aria-label="Demo video placeholder">
+            <svg class="demo-play" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><circle cx="24" cy="24" r="23" fill="none" stroke="currentColor" stroke-width="2"/><path d="M19 15v18l15-9z" fill="currentColor"/></svg>
+          </div>
+          <figcaption>Demo video coming soon</figcaption>
+        </figure>
       </div>
     </section>
 
-    <section id="world-3" aria-label="Hosted tools">
+    <section id="world-3" aria-label="Chat inside Studio">
       <div class="strip"></div>
       <div class="art" aria-hidden="true"></div>
       <div class="copy">
-        <h2>The heavy lifting runs on our side</h2>
-        <p>Style learning and placement run on hosted tools, so the plugin stays light and your place file stays yours. Your team shares one style profile, kept on the server and ready on every machine.</p>
+        <h2>Or just ask, inside Studio</h2>
+        <p>No agent of your own? Open the chat panel in Studio and talk to our hosted agent. There is nothing to set up.</p>
+        <p>Your map data goes to our server, never through a model.</p>
+        <figure class="demo">
+          <!-- To add the video, replace the .demo-frame div with
+               <video class="demo-media" src="..." controls playsinline preload="none" poster="..."></video>
+               or <iframe class="demo-media" src="..." title="..." allowfullscreen></iframe>.
+               .demo-media fills the same 16:9 box; then drop the "coming soon" caption. -->
+          <div class="demo-frame" role="img" aria-label="Demo video placeholder">
+            <svg class="demo-play" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><circle cx="24" cy="24" r="23" fill="none" stroke="currentColor" stroke-width="2"/><path d="M19 15v18l15-9z" fill="currentColor"/></svg>
+          </div>
+          <figcaption>Demo video coming soon</figcaption>
+        </figure>
       </div>
     </section>
 
@@ -58,8 +94,37 @@
       <div class="strip"></div>
       <div class="art" aria-hidden="true"></div>
       <div class="copy" id="install">
-        <h2>Free to try, simple to keep</h2>
-        <p>Install the plugin and dress your first maps at no cost. Plans for studios that dress every day are on the way.</p>
+        <h2>Pick a plan</h2>
+        <p>Start free. Prices for paid plans are coming soon.</p>
+        <ul class="tiers">
+          <li class="tier">
+            <h3>Trial</h3>
+            <p class="tier-price">Free</p>
+            <ul>
+              <li>A limited number of dresses</li>
+              <li>Learn style and Dress</li>
+              <li>Editable results with undo</li>
+            </ul>
+          </li>
+          <li class="tier">
+            <h3>Solo</h3>
+            <p class="tier-price">Price coming soon</p>
+            <ul>
+              <li>For one developer</li>
+              <li>Both ways in: your own agent or the Studio chat panel</li>
+              <li>Your own asset kit and styles</li>
+            </ul>
+          </li>
+          <li class="tier">
+            <h3>Studio</h3>
+            <p class="tier-price">Price coming soon</p>
+            <ul>
+              <li>Seats for your whole team</li>
+              <li>Shared styles across the team</li>
+              <li>Shared rules for how maps get dressed</li>
+            </ul>
+          </li>
+        </ul>
         <a class="install" href="#install">Install the Studio plugin</a>
       </div>
     </section>
