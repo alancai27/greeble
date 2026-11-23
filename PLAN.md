@@ -98,9 +98,10 @@ Rules for building it:
   readers. The animation decorates the page; it never gates content.
 - No scroll hijacking: the page scrolls at the user's own speed.
 - Honour `prefers-reduced-motion` with static illustrations per section.
-- Must run smoothly on a mid-range phone. Start with layered 2D (SVG or
-  canvas) driven by scroll position; real 3D is on the cut list.
-- No dependencies beyond the framework unless an issue names one.
+- Must run smoothly on a mid-range phone. The figure and worlds are real 3D
+  (WebGL, `three`) in one fixed canvas behind the copy, driven by scroll
+  position. Without WebGL the copy still shows on plain backgrounds.
+- No dependencies beyond the framework and `three` unless an issue names one.
 - First issue: use the `prototype` skill for three structurally different
   takes on the hero and drop, then escalate the choice to the human. Use the
   `frontend-design` skill for art direction, and `webapp-testing` to check
@@ -149,7 +150,7 @@ permissions. The installer must ask before each of those and default to off.
 
 ## Cut list
 
-1. Real 3D on the site, and any world beyond the first two.
+1. Any site world beyond the first two.
 2. Team seats.
 3. Door 2, if model cost per active user is above what a plan can charge.
 
@@ -168,3 +169,4 @@ permissions. The installer must ask before each of those and default to off.
 - 2026-11-23: The site is static HTML with Vite and TypeScript, no UI framework.
 - 2026-11-23: Site hero is layout A (Poster). B and C are dropped.
 - 2026-11-23: The figure is a Roblox-style blocky character and the worlds are Roblox-style, built from bricks with studs (human's call). We draw them ourselves: still no Roblox logo, typeface or copied assets, and the brand-guideline check before launch still applies.
+- 2026-11-23: The site is real 3D throughout (human's call): a 3D blocky character in the classic Roblox build and 3D studded worlds, using `three`. This takes 3D off the cut list and drops the 2D SVG hero and world. We model everything ourselves; no Roblox logo, typeface, face decal or copied mesh.
