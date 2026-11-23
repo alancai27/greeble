@@ -251,7 +251,7 @@ local function readKit(kit: Instance)
 	for _, child in kit:GetChildren() do
 		if child:IsA("Model") then
 			local size = boxSize(child)
-			table.insert(assets, { id = child.Name, footprint = math.max(size.X, size.Z) / 2 })
+			table.insert(assets, { id = child.Name, footprint = math.sqrt(size.X ^ 2 + size.Z ^ 2) / 2 })
 			byId[child.Name] = child
 			sizes[child.Name] = size
 		end
