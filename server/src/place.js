@@ -14,8 +14,13 @@ const rectDist = (x, z, b) => {
  * this function stays the thing that enforces the hard rules.
  *
  * Each prop is a circle of radius footprint * scale in XZ. The whole circle
- * stays inside the zone's XZ bounds, off keep-clear boxes, off steep hits and
- * clear of every other prop's circle.
+ * stays inside the zone's XZ bounds, off keep-clear boxes and off steep hits.
+ * Spacing follows the map's own distances, so circles may overlap:
+ *   different assets: d >= min(rA + rB, (clearanceA + clearanceB) / 2)
+ *   same asset:       d >= 0.6 * spacing
+ * An asset with no clearance keeps the old rule (non-touching circles, and
+ * same-asset gaps of 0.6 * max(spacing, 2 * footprint)); one with no spacing
+ * uses non-touching circles for the same-asset rule.
  */
 export function place(req) {
   const { surface: hits, cell, assets, keepClear = [], profile, budget = {}, seed = 1, maxSlopeDeg = 35 } = req;
@@ -56,7 +61,7 @@ export function place(req) {
   const placements = [];
   const taken = []; // {x, z, r}
   const area = surface.length * cell * cell;
-  const half = Math.min(hi[0] - lo[0], hi[1] - lo[1]) / 2;
+  const side = Math.min(hi[0] - lo[0], hi[1] - lo[1]);
 
   const order = surface.map((_, i) => i);
   for (let i = order.length - 1; i > 0; i--) {
@@ -68,7 +73,7 @@ export function place(req) {
   // Assets too wide for the zone are left out entirely.
   for (const a of assets) {
     const st = profile?.assets?.[a.id];
-    if (st && 2 * a.footprint * st.scaleMax > half) stats.tooLarge.push(a.id);
+    if (st && 2 * a.footprint * st.scaleMax > side) stats.tooLarge.push(a.id);
   }
   stats.tooLarge.sort();
   const sorted = assets.filter((a) => !stats.tooLarge.includes(a.id)).sort((a, b) => b.footprint - a.footprint);
@@ -76,9 +81,11 @@ export function place(req) {
     const style = profile?.assets?.[asset.id];
     if (!style) continue;
     const target = Math.round(style.density * area);
-    const sameGap = Math.max(style.spacing ?? 0, asset.footprint * 2) * 0.6;
+    const clr = style.clearance > 0 ? style.clearance : 0;
+    const spacing = style.spacing > 0 ? style.spacing : 0;
+    // Legacy (no clearance): non-touching circles plus the old same-asset gap.
+    const sameGap = clr ? 0.6 * spacing : Math.max(spacing, asset.footprint * 2) * 0.6;
     let made = 0;
-    const mine = [];
     for (const idx of order) {
       if (made >= target) break;
       if (placements.length >= max) { stats.budgetHit = true; break; }
@@ -100,12 +107,14 @@ export function place(req) {
         p[1] >= b.min[1] && p[1] <= b.max[1] && rectDist(p[0], p[2], b) <= r);
       if (blocked) { stats.skippedKeepClear++; continue; }
       if (coversSteep(p[0], p[2], r)) { stats.skippedSlope++; continue; }
-      const clash =
-        taken.some((t) => Math.hypot(t.x - p[0], t.z - p[2]) < t.r + r) ||
-        mine.some((t) => Math.hypot(t.x - p[0], t.z - p[2]) < sameGap);
+      const clash = taken.some((t) => {
+        const d = Math.hypot(t.x - p[0], t.z - p[2]);
+        if (t.id !== asset.id) return d < (t.c && clr ? Math.min(t.r + r, (t.c + clr) / 2) : t.r + r);
+        if (!clr) return d < t.r + r || d < sameGap;
+        return d < (spacing ? sameGap : t.r + r);
+      });
       if (clash) { stats.skippedOverlap++; continue; }
-      const spot = { x: p[0], z: p[2], r };
-      taken.push(spot); mine.push(spot);
+      taken.push({ x: p[0], z: p[2], r, id: asset.id, c: clr });
       placements.push({
         assetId: asset.id,
         position: p,
