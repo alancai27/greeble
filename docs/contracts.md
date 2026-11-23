@@ -143,6 +143,7 @@ official source by the installer, never copied here.
 | `pack/claude/hooks/` | `<CLAUDE>/hooks/greeble/` |
 | `pack/vaults/Roblox Knowledge/` | `<VAULTS>/Roblox Knowledge/` |
 | `pack/vaults/_templates/` | `<VAULTS>/_templates/` |
+| `pack/vaults/_tools/` | `<VAULTS>/_tools/` |
 | `pack/install/` | not installed; the installer and its scripts |
 
 - `<CLAUDE>` defaults to `$HOME/.claude`, `<VAULTS>` to
