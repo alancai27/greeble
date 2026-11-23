@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Title options</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Young+Serif&family=Martian+Mono:wdth,wght@75..112.5,400..600&display=swap"
+    />
+    <link rel="stylesheet" href="/src/style.css" />
+    <link rel="stylesheet" href="/src/brand.css" />
+    <style>
+      body { background: var(--paper); }
+      .option { border-top: 1px solid #dfe3ec; }
+      .option .hero { min-height: auto; padding-top: 24px; padding-bottom: 72px; }
+      .caption { margin: 0 0 32px; font-size: 15px; color: var(--ink-soft); }
+      .caption b { color: var(--ink); font-weight: 700; margin-right: 0.5em; }
+
+      /* Option 1 is the live rule in brand.css (.hero .wordmark). */
+
+      /* Option 2: a characterful serif with chunky, toy-like brackets. */
+      .opt-2 .hero .wordmark {
+        font-family: 'Young Serif', Georgia, serif;
+        font-variation-settings: normal;
+        font-weight: 400;
+        font-size: min(19vw, 270px);
+        letter-spacing: -0.025em;
+        line-height: 0.95;
+      }
+
+      /* Option 3: a narrowed monospace, every letter on the same grid like studs. */
+      .opt-3 .hero .wordmark {
+        font-family: 'Martian Mono', ui-monospace, monospace;
+        font-variation-settings: 'wdth' 75;
+        font-weight: 500;
+        font-size: min(16vw, 220px);
+        letter-spacing: -0.06em;
+        line-height: 0.95;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="option opt-1" aria-label="Option 1">
+        <header class="hero">
+          <p class="caption"><b>1</b>Bricolage Grotesque, condensed display cut. Ships on the main page.</p>
+          <h1 class="wordmark">Gree<span class="anchor">b</span>le</h1>
+          <div class="hero-row">
+            <p class="lede">Greeble dresses your blocked-out zones with your own assets, in your studio's style.</p>
+            <a class="install" href="#">Install the Studio plugin</a>
+          </div>
+        </header>
+      </section>
+
+      <section class="option opt-2" aria-label="Option 2">
+        <header class="hero">
+          <p class="caption"><b>2</b>Young Serif, a soft bracketed serif.</p>
+          <h1 class="wordmark">Gree<span class="anchor">b</span>le</h1>
+          <div class="hero-row">
+            <p class="lede">Greeble dresses your blocked-out zones with your own assets, in your studio's style.</p>
+            <a class="install" href="#">Install the Studio plugin</a>
+          </div>
+        </header>
+      </section>
+
+      <section class="option opt-3" aria-label="Option 3">
+        <header class="hero">
+          <p class="caption"><b>3</b>Martian Mono, narrowed, on a fixed letter grid.</p>
+          <h1 class="wordmark">Gree<span class="anchor">b</span>le</h1>
+          <div class="hero-row">
+            <p class="lede">Greeble dresses your blocked-out zones with your own assets, in your studio's style.</p>
+            <a class="install" href="#">Install the Studio plugin</a>
+          </div>
+        </header>
+      </section>
+    </main>
+  </body>
+</html>
