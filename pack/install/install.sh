@@ -109,6 +109,12 @@ if [ -f "$PACK/install/hooks.sh" ]; then
   GREEBLE_CLAUDE_DIR="$CLAUDE" bash "$PACK/install/hooks.sh" || true
 fi
 
+# Offer to add Greeble's rules block to the global CLAUDE.md. A failure there
+# is reported and the install goes on.
+if [ -f "$PACK/install/memory.sh" ]; then
+  GREEBLE_CLAUDE_DIR="$CLAUDE" GREEBLE_VAULTS_DIR="$VAULTS" bash "$PACK/install/memory.sh" || true
+fi
+
 # Server URL and key.
 url="${GREEBLE_URL:-}"
 key="${GREEBLE_KEY:-}"
