@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import { createWorld1 } from './world1';
+import { createWorld, type Theme } from './world1';
 
-// Demo: a slider drives the world's progress; the camera orbits slowly.
+// Demo: pick a theme; a slider drives the world's progress; the camera orbits slowly.
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setClearColor(0x000000, 0);
 renderer.shadowMap.enabled = true;
@@ -22,8 +22,22 @@ sun.shadow.normalBias = 0.02;
 Object.assign(sun.shadow.camera, { left: -24, right: 24, top: 24, bottom: -24, near: 1, far: 90 });
 scene.add(sun, sun.target);
 
-const world = createWorld1();
+const THEMES: Theme[] = ['meadow', 'desert', 'neon', 'snow'];
+const params = new URLSearchParams(location.search);
+const picker = document.querySelector<HTMLSelectElement>('#theme')!;
+let theme: Theme = THEMES.includes(params.get('theme') as Theme) ? (params.get('theme') as Theme) : 'meadow';
+picker.value = theme;
+
+let world = createWorld(theme);
 scene.add(world.object);
+
+const dispose = (o: THREE.Object3D) =>
+  o.traverse((c) => {
+    if (c instanceof THREE.Mesh) {
+      c.geometry.dispose();
+      (Array.isArray(c.material) ? c.material : [c.material]).forEach((m) => m.dispose());
+    }
+  });
 
 const slider = document.querySelector<HTMLInputElement>('#p')!;
 const pv = document.querySelector<HTMLElement>('#pv')!;
@@ -32,10 +46,27 @@ const initial = Number(new URLSearchParams(location.search).get('p') ?? 0);
 slider.value = String(initial);
 
 let progress = NaN;
+picker.addEventListener('change', () => {
+  theme = picker.value as Theme;
+  scene.remove(world.object);
+  dispose(world.object);
+  world = createWorld(theme);
+  scene.add(world.object);
+  progress = NaN; // re-apply the slider on the next frame
+});
+
+// Sky per theme: [top, bottom] by day, then at full lighting (section --sky colours).
+const SKIES: Record<Theme, [number, number, number, number]> = {
+  meadow: [0xbfe3ff, 0xeef7ff, 0xffb27a, 0xffe2b8],
+  desert: [0xf7e6c4, 0xfbf3e2, 0xf4a46a, 0xf7d6b0],
+  neon: [0x2a2160, 0x3a2f73, 0x15112e, 0x3b1460],
+  snow: [0xe6f0f9, 0xf6fafd, 0x9fb8dc, 0xe6f0f9],
+};
 const sky = (p: number) => {
   const l = Math.min(1, Math.max(0, (p - 0.8) / 0.2));
-  const top = new THREE.Color(0xbfe3ff).lerp(new THREE.Color(0xffb27a), l * 0.8);
-  const bottom = new THREE.Color(0xeef7ff).lerp(new THREE.Color(0xffe2b8), l);
+  const [t0, b0, t1, b1] = SKIES[theme];
+  const top = new THREE.Color(t0).lerp(new THREE.Color(t1), theme === 'meadow' ? l * 0.8 : l);
+  const bottom = new THREE.Color(b0).lerp(new THREE.Color(b1), l);
   document.body.style.background = `linear-gradient(#${top.getHexString()}, #${bottom.getHexString()})`;
 };
 
