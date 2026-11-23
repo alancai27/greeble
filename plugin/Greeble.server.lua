@@ -10,8 +10,10 @@
 --      The status line at the bottom of that widget shows the last result or error.
 --   5. To learn a style, select the Folders or Models of a finished map and click "Learn style".
 --      Each selection becomes one zone (its "Label" attribute, if set, names it). Every Model
---      inside whose Name matches a kit Model counts as one instance. The returned profile is
---      saved and used by "Dress zone".
+--      inside whose Name matches a kit Model counts as one instance. The server stores the style
+--      per key and label; nothing is saved in the plugin.
+--   6. Click "Dress zone". The server uses the style learned for the zone's "Label" attribute,
+--      or the unlabelled ("default") style. Optional zone attributes: ZoneId, Label, MaxInstances, Seed.
 
 local HttpService = game:GetService("HttpService")
 local Selection = game:GetService("Selection")
@@ -228,7 +230,8 @@ end
 ---------------------------------------------------------------------------
 -- HTTP
 
-local function request(method: string, path: string, body: any?): any
+-- `hints` maps an HTTP status to a message shown before the server's error string.
+local function request(method: string, path: string, body: any?, hints: { [number]: string }?): any
 	local url = settingString("GreebleUrl")
 	local key = settingString("GreebleKey")
 	if not url or not key then fail("Set the server URL and key in Settings first.") end
@@ -248,6 +251,13 @@ local function request(method: string, path: string, body: any?): any
 
 	if not res.Success then
 		local decoded, data = pcall(HttpService.JSONDecode, HttpService, res.Body)
+		local hint = if hints then hints[res.StatusCode] else nil
+		if hint then
+			local detail = if decoded and type(data) == "table" and type(data.error) == "string"
+				then data.error
+				else tostring(res.StatusMessage)
+			fail(("%s (server: %s)"):format(hint, detail))
+		end
 		if decoded and type(data) == "table" and type(data.error) == "string" then
 			fail(("Server error %d: %s"):format(res.StatusCode, data.error))
 		end
@@ -259,8 +269,8 @@ local function request(method: string, path: string, body: any?): any
 	return data
 end
 
-local function post(path: string, body: any): any
-	return request("POST", path, body)
+local function post(path: string, body: any, hints: { [number]: string }?): any
+	return request("POST", path, body, hints)
 end
 
 ---------------------------------------------------------------------------
@@ -280,21 +290,19 @@ local function dress(opts: { zone: string?, maxInstances: number?, seed: number?
 	for _, part in CollectionService:GetTagged("GreebleKeepClear") do
 		if part:IsA("BasePart") then table.insert(keepClear, boxOf(part)) end
 	end
-	local profileJson = plugin:GetSetting("GreebleProfile")
-	if not profileJson then fail("No style profile saved yet.") end
-	local okProfile, profile = pcall(HttpService.JSONDecode, HttpService, profileJson)
-	if not okProfile then fail("Saved style profile is not valid JSON.") end
-
 	local zonePart = zone :: BasePart
+	local labelAttr = zonePart:GetAttribute("Label")
+	local zoneLabel = if type(labelAttr) == "string" and trim(labelAttr) ~= "" then labelAttr else nil
 	local result = post("/v1/place", {
-		zone = { id = zonePart:GetAttribute("ZoneId") or "zone", label = zonePart:GetAttribute("Label") or "" },
+		zone = { id = zonePart:GetAttribute("ZoneId") or "zone", label = zoneLabel },
 		surface = sampleSurface(zonePart),
 		cell = CELL,
 		assets = assets,
 		keepClear = keepClear,
-		profile = profile,
 		budget = { maxInstances = o.maxInstances or zonePart:GetAttribute("MaxInstances") or 500 },
 		seed = o.seed or zonePart:GetAttribute("Seed") or 1,
+	}, {
+		[409] = "No style learned for this zone yet. Select a finished map and run Learn style first.",
 	})
 
 	local recording = ChangeHistoryService:TryBeginRecording("Greeble: dress zone")
@@ -386,7 +394,6 @@ local function learn()
 	if type(result) ~= "table" or type(result.profile) ~= "table" then
 		fail("Server reply has no profile.")
 	end
-	plugin:SetSetting("GreebleProfile", HttpService:JSONEncode(result.profile))
 	setStatus(("Learned style from %d instances in zones: %s."):format(total, table.concat(names, ", ")))
 end
 
