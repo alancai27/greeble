@@ -166,3 +166,5 @@ permissions. The installer must ask before each of those and default to off.
 - 2026-11-23: Slope limit is one number per request (`maxSlopeDeg`, default 35), not per asset.
 - 2026-11-23: The plugin stays one file until the human decides on a Rojo build, so studio issues run one at a time.
 - 2026-11-23: The site is static HTML with Vite and TypeScript, no UI framework.
+- 2026-11-23: Site hero is layout A (Poster). B and C are dropped.
+- 2026-11-23: The figure is a Roblox-style blocky character and the worlds are Roblox-style, built from bricks with studs (human's call). We draw them ourselves: still no Roblox logo, typeface or copied assets, and the brand-guideline check before launch still applies.
