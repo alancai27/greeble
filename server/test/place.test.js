@@ -55,3 +55,24 @@ test("budget caps the count and same seed repeats", () => {
   assert.equal(a.stats.budgetHit, true);
   assert.deepEqual(place(base), place(base));
 });
+
+// Half the grid (x >= 64) tilted 60 degrees about the Z axis.
+const tilt = (60 * Math.PI) / 180;
+const halfSteep = base.surface.map((h) =>
+  h.position[0] >= 64 ? { ...h, normal: [Math.sin(tilt), Math.cos(tilt), 0] } : h);
+const steepCount = halfSteep.filter((h) => h.position[0] >= 64).length;
+
+test("nothing lands on steep ground and the count halves", () => {
+  const flat = place(base);
+  const { placements, stats } = place({ ...base, surface: halfSteep });
+  assert.equal(stats.skippedSlope, steepCount);
+  for (const p of placements) assert.ok(p.position[0] < 64, `on slope at ${p.position[0]}`);
+  const ratio = placements.length / flat.placements.length;
+  assert.ok(ratio > 0.4 && ratio < 0.6, `ratio ${ratio}`);
+});
+
+test("maxSlopeDeg 90 keeps the old placements", () => {
+  const open = place({ ...base, surface: halfSteep, maxSlopeDeg: 90 });
+  assert.equal(open.stats.skippedSlope, 0);
+  assert.deepEqual(open.placements, place(base).placements);
+});
