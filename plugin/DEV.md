@@ -1,7 +1,6 @@
 # Running a changed plugin build in Studio
 
-Studio loads `~/Documents/Roblox/Plugins/Greeble.server.lua` once, at start. Copying a new
-file there does nothing until a restart. These were tried over the Studio MCP server:
+Studio loads `~/Documents/Roblox/Plugins/Greeble.server.lua` only at start. Tried over MCP:
 
 - Studio's own reload: doesn't work. Plugin Debugging (Save and Reload Plugin) is off, its
   setting is locked to Roblox scripts, it is a right-click menu, and it writes out, not in.
