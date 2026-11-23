@@ -65,8 +65,7 @@
 }
 
 /* The scene paints the sky on <html> and blends it between sections. */
-.has-stage #world-1, .has-stage #world-2, .has-stage #world-3, .has-stage #world-4,
-.has-stage .site-footer { background: none; }
+.has-stage #world-1, .has-stage #world-2, .has-stage #world-3, .has-stage #world-4 { background: none; }
 
 @media (min-width: 1024px) {
   #world-1, #world-2, #world-3, #world-4 {
@@ -86,8 +85,6 @@
   }
   #world-1 .copy, #world-3 .copy { grid-column: 1; }
   #world-2 .copy, #world-4 .copy { grid-column: 2; }
-  /* The last world (left) stays behind the footer; its text takes the right half. */
-  .has-stage .site-footer { padding-left: calc(50% + var(--gutter)); }
 }
 
 .copy h2 {
@@ -105,23 +102,41 @@
 }
 .copy .install { margin-top: 0.5em; }
 
+/* Footer: a thin strip along the bottom of the last world, not a screen of its own.
+   It pulls itself up over world-4's bottom edge, so the page ends where world-4 does;
+   world-4 keeps that much room clear at its bottom so the strip covers nothing. */
+:root { --footer-h: 56px; }
+#world-4 { padding-bottom: calc(var(--footer-h) + var(--gutter)); }
 .site-footer {
-  background: var(--paper);
-  color: var(--ink-soft);
-  padding: clamp(40px, 8vh, 80px) var(--gutter);
-  font-size: 16px;
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
+  min-height: var(--footer-h);
+  margin-top: calc(-1 * var(--footer-h));
+  padding: 8px var(--gutter);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 1.5em;
+  background: color-mix(in srgb, #c9dbec 85%, transparent);
+  color: #2f4c69;
+  font-size: 14px;
+  line-height: 1.3;
 }
-.site-footer p { margin: 0 0 0.4em; }
-.footer-mark { font-family: var(--display); font-weight: 800; font-size: 22px; color: var(--ink); }
-.footer-small { font-size: 14px; }
+.site-footer p { margin: 0; }
+.footer-mark { font-family: var(--display); font-weight: 800; font-size: 15px; color: #12304e; }
+.footer-small { font-size: 13px; }
 
 /* Section snap: CSS only. Each section is at least one viewport tall and
-   grows if its copy needs more room; it still snaps to its top. */
+   grows if its copy needs more room; it still snaps to its top. The footer
+   strip is not a snap point: the last one is world-4. */
 html { scroll-snap-type: y mandatory; }
-.hero, section, .site-footer { scroll-snap-align: start; }
+.hero, section { scroll-snap-align: start; }
 .hero, section#world-1, section#world-2, section#world-3, section#world-4 { min-height: 100svh; }
-/* The footer is a full screen too, so its snap point is reachable and the
-   corner mark never rests over the last section's copy. */
-.site-footer { min-height: 100svh; display: flex; flex-direction: column; justify-content: center; }
-/* Narrow: the last world stays in the upper part, so the footer text sits low. */
-@media (max-width: 1023.98px) { .has-stage .site-footer { justify-content: flex-end; } }
+/* Narrow: two lines, the mark and tagline on the first, the small print below. */
+@media (max-width: 1023.98px) {
+  :root { --footer-h: 52px; }
+  .site-footer { gap: 2px 0.6em; padding-block: 6px; font-size: 13px; font-stretch: 80%; }
+  .footer-mark { font-size: 13px; }
+  .footer-small { flex-basis: 100%; font-size: 13px; }
+}
