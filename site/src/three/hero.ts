@@ -3,14 +3,14 @@ import type { Actor, Frame } from './stage';
 import { createCharacter, HANG_GRIP } from './character';
 
 // h = scrollY / viewportH. Every pose below is a function of h (plus Frame.time for the
-// sway, which fades to zero before the snap), so jumps and slow scrolls land on the same state.
-const SNAP_H = 0.15;     // string breaks
-const RETRACT_H = 0.12;  // the broken ends spring back over this much h
+// sway, which fades to zero before the drop), so jumps and slow scrolls land on the same state.
+const ROPE_OFF_H = 0.02; // the string thins away over 0..this, gone for any scroll past it
+const SNAP_H = 0.15;     // character lets go
 const LAND_H = 0.85;     // feet touch y = 0 with the next section mostly in view
 const STAND_H = 1;       // squash done, standing
 
 const STRING_LEN = 3;    // studs between anchor and hand
-const STRETCH = 0.8;     // the string gives this much before it snaps
+const STRETCH = 0.8;     // the hang drops this much before letting go
 const SWAY = 0.12;       // radians
 const TWIST = 0.35;      // radians, slow turn on the string
 const CENTER_Y = 2.5;    // body centre above the feet; tumbles turn about it
@@ -47,11 +47,6 @@ export function createHero(anchor: () => THREE.Vector3): Actor {
 
   const stringMat = new THREE.MeshStandardMaterial({ color: 0xf4f1ea, roughness: 0.8 });
   const upper = stringMesh(stringMat);
-  // The piece left in the hand points from the grip back along the old string line.
-  const lower = stringMesh(stringMat);
-  lower.position.copy(grip);
-  lower.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), grip.clone().normalize());
-  carrier.add(lower);
   root.add(upper, carrier);
 
   const qa = new THREE.Quaternion();
@@ -63,6 +58,10 @@ export function createHero(anchor: () => THREE.Vector3): Actor {
     const a = anchor();
     const calm = f.reducedMotion;
     const len = STRING_LEN + STRETCH * clamp01(h / SNAP_H) ** 2;
+    // Rope only at the very top: thins to nothing by ROPE_OFF_H so a 1 px scroll doesn't pop it.
+    const rope = 1 - smooth(h / ROPE_OFF_H);
+    upper.visible = rope > 0;
+    upper.position.copy(a);
 
     if (h < SNAP_H) {
       const live = calm ? 0 : 1 - smooth(h / SNAP_H);
@@ -73,23 +72,11 @@ export function createHero(anchor: () => THREE.Vector3): Actor {
       carrier.quaternion.copy(qa).multiply(qb.setFromAxisAngle(Y, twist)).multiply(qTilt);
       tmp.set(0, -(len + gripLen), 0).applyQuaternion(qa);
       carrier.position.copy(a).add(tmp);
-      upper.position.copy(a);
       upper.quaternion.copy(qa);
-      upper.scale.y = len;
-      upper.visible = true;
-      lower.visible = false;
-      lower.scale.y = len * 0.5;
+      upper.scale.set(rope, len, rope);
       character.pose('hang', calm ? 0 : f.time * live);
       return;
     }
-
-    // Broken ends spring back: the top piece to the anchor, the bottom piece into the hand.
-    const left = 1 - smooth((h - SNAP_H) / RETRACT_H);
-    upper.visible = lower.visible = left > 0;
-    upper.position.copy(a);
-    upper.quaternion.identity();
-    upper.scale.y = Math.max(left * len * 0.5, 1e-3);
-    lower.scale.y = Math.max(left * len * 0.5, 1e-3);
 
     if (h < LAND_H) {
       const u = (h - SNAP_H) / (LAND_H - SNAP_H);
