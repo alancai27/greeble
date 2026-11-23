@@ -68,3 +68,29 @@ test("place uses the zone's style, falls back to default, ignores a client profi
   const none = post("a", "/v1/place", { ...placeReq(), zone: { id: "z2" } })[1];
   assert.ok(count(none, "Tree") > 0);
 });
+
+test("no-profile error names the looked-up label and the learned labels", () => {
+  post("a", "/v1/profile", { zones: [{ label: "market", area: 100, instances: row("Barrel", 8, 4) }] });
+  const [code, body] = post("a", "/v1/place", { ...placeReq(), zone: { id: "z2" } });
+  assert.equal(code, 409);
+  assert.equal(body.error, 'no profile for label "default"; learned labels: market');
+});
+
+test("no-profile error says none when nothing is learned", () => {
+  const [code, body] = post("a", "/v1/place", placeReq("  Docks "));
+  assert.equal(code, 409);
+  assert.equal(body.error, 'no profile for label "docks"; learned labels: none');
+  assert.ok(body.error.endsWith("learned labels: none"));
+});
+
+test("no-profile error never names another key's labels", () => {
+  post("b", "/v1/profile", { zones: [
+    { label: "market", area: 100, instances: row("Barrel", 8, 4) },
+    { label: "forest", area: 100, instances: row("Tree", 8, 4) },
+  ] });
+  post("a", "/v1/profile", { zones: [{ label: "harbor", area: 100, instances: row("Barrel", 8, 4) }] });
+  const [code, body] = post("a", "/v1/place", placeReq("market"));
+  assert.equal(code, 409);
+  assert.equal(body.error, 'no profile for label "market"; learned labels: harbor');
+  assert.ok(!body.error.includes("forest"));
+});

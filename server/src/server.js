@@ -36,8 +36,12 @@ export function route(key, method, url, body) {
   if (url === "/v1/place") {
     validatePlace(body);
     const zones = getProfile(key)?.zones ?? {};
-    const style = zones[zoneKey(body?.zone?.label)] ?? zones.default;
-    if (!style) return [409, { error: "no profile for this zone; POST /v1/profile first" }];
+    const label = zoneKey(body?.zone?.label);
+    const style = zones[label] ?? zones.default;
+    if (!style) {
+      const learned = Object.keys(zones).sort().join(", ") || "none";
+      return [409, { error: `no profile for label "${label}"; learned labels: ${learned}` }];
+    }
     const { profile: _ignored, ...req } = body;
     return [200, place({ ...req, profile: style })];
   }
