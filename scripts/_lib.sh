@@ -13,11 +13,18 @@ main_root() {
   git worktree list --porcelain | sed -n '1s/^worktree //p'
 }
 
-# Where the worktree for issue N lives: ../<repo>-wt/issue-N
+# Where the worktree for issue N lives: <repo>/.wt/issue-N (ignored by git).
+# A worktree made before the move, at ../<repo>-wt/issue-N, keeps its place
+# until it is cleaned up.
 wt_dir() {
-  local root
+  local root old
   root=$(main_root)
-  echo "$(dirname "$root")/$(basename "$root")-wt/issue-$1"
+  old="$(dirname "$root")/$(basename "$root")-wt/issue-$1"
+  if [ -d "$old" ]; then
+    echo "$old"
+  else
+    echo "$root/.wt/issue-$1"
+  fi
 }
 
 # Comma-separated labels on issue N.
