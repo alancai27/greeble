@@ -28,6 +28,18 @@ local function fail(msg: string): never
 	error(msg, 0)
 end
 
+-- A server reply error: shows as `message`, and carries the server's own text for job results.
+local ServerError = { __tostring = function(e) return e.message end }
+
+local function failServer(message: string, serverText: string): never
+	error(setmetatable({ message = message, serverText = serverText }, ServerError), 0)
+end
+
+-- The server's own error text if `err` came from a server reply, else nil.
+local function serverTextOf(err: any): string?
+	return if type(err) == "table" and getmetatable(err) == ServerError then err.serverText else nil
+end
+
 local function trim(s: string): string
 	return (s:gsub("^%s+", ""):gsub("%s+$", ""))
 end
@@ -263,17 +275,17 @@ local function request(method: string, path: string, body: any?, hints: { [numbe
 
 	if not res.Success then
 		local decoded, data = pcall(HttpService.JSONDecode, HttpService, res.Body)
+		local serverText = if decoded and type(data) == "table" and type(data.error) == "string" then data.error else nil
 		local hint = if hints then hints[res.StatusCode] else nil
+		local message
 		if hint then
-			local detail = if decoded and type(data) == "table" and type(data.error) == "string"
-				then data.error
-				else tostring(res.StatusMessage)
-			fail(("%s (server: %s)"):format(hint, detail))
+			message = ("%s (server: %s)"):format(hint, serverText or tostring(res.StatusMessage))
+		elseif serverText then
+			message = ("Server error %d: %s"):format(res.StatusCode, serverText)
+		else
+			message = ("Server error %d %s"):format(res.StatusCode, tostring(res.StatusMessage))
 		end
-		if decoded and type(data) == "table" and type(data.error) == "string" then
-			fail(("Server error %d: %s"):format(res.StatusCode, data.error))
-		end
-		fail(("Server error %d %s"):format(res.StatusCode, tostring(res.StatusMessage)))
+		failServer(message, serverText or message)
 	end
 
 	local decoded, data = pcall(HttpService.JSONDecode, HttpService, res.Body)
@@ -359,8 +371,14 @@ local function dress(opts: { zone: string?, maxInstances: number?, seed: number?
 	end
 	if not ok then fail("Placing instances failed: " .. tostring(err)) end
 
-	local placed = result.stats and result.stats.placed or 0
-	setStatus(("Placed %d instances in %s. Undo with Ctrl+Z."):format(placed, zoneName))
+	local stats = if type(result.stats) == "table" then result.stats else {}
+	local placed = stats.placed or 0
+	if placed == 0 then
+		setStatus(("Nothing placed in %s (skipped: %d keep-clear, %d overlap, %d slope)."):format(
+			zoneName, stats.skippedKeepClear or 0, stats.skippedOverlap or 0, stats.skippedSlope or 0))
+	else
+		setStatus(("Placed %d instances in %s. Undo with Ctrl+Z."):format(placed, zoneName))
+	end
 	return result.stats
 end
 
@@ -478,9 +496,11 @@ local function runJob(job)
 		fail("unknown job type " .. tostring(job.type))
 	end)
 	if not ok then setStatus("Job " .. tostring(job.id) .. " failed: " .. tostring(out), true) end
+	-- A failed dress reports the server's own text, so the agent can see e.g. which label has no style.
+	local errText = if job.type == "dress_zone" then serverTextOf(out) or tostring(out) else tostring(out)
 	local sent, sendErr = pcall(post, "/v1/jobs/" .. job.id .. "/result", {
 		ok = ok,
-		result = if ok then out else { error = tostring(out) },
+		result = if ok then out else { error = errText },
 	})
 	if not sent then setStatus("Could not report job " .. tostring(job.id) .. ": " .. tostring(sendErr), true) end
 end
