@@ -6,7 +6,7 @@ import { createWorld, type Theme } from './world1';
 // The main page story: the hero hangs from the wordmark's "b", falls as the page snaps to
 // world-1, lands at the origin, and the world grows around it. h = scrollY / viewportH.
 // Between two world sections the old world shrinks away while the plate turns a quarter
-// turn and slides to the other side; the next section's world grows once it arrives.
+// turn in place, always on the right half on wide screens; the next section's world grows once it arrives.
 
 const HANG_LEN = 9.5;      // studs from the anchor down to the hanging feet
 const HANG_FILL = 0.8;     // share of the wordmark-to-copy gap the hanging figure uses
@@ -19,7 +19,7 @@ const BUILD_S = 2.5;       // seconds for the world to grow
 const CLEAR_S = 0.5;       // seconds for a world to shrink away when another one is due
 const CLEAR_AT = 0.85;     // share of a transition by which the old world is gone
 const WIDE_PX = 1024;      // at and above: world and copy side by side
-const SIDE_X = 0.5;        // NDC x of the world's centre on wide screens: middle of its half
+const SIDE_X = 0.5;        // NDC x of the world's centre on wide screens: middle of the right half
 const PLATE_R = 23;        // studs: the plate's widest half-extent at any turn
 const FILL = 0.8;          // share of its half of the screen the plate may span
 const THEMES: Theme[] = ['meadow', 'desert', 'neon', 'snow'];
@@ -39,7 +39,7 @@ interface Layout {
   worldH: number;      // h at which world-1 is snapped into place
   tops: number[];      // per world section: scrollY of its snap point
   shift: number[];     // per world: NDC y the standing character sits at (+ is up)
-  shiftX: number[];    // per world: NDC x, so wide screens keep the world beside the copy
+  shiftX: number[];    // per world: NDC x, so wide screens keep the world right of the copy
   sky: THREE.Color[];  // per world: page background behind the canvas
 }
 
@@ -86,7 +86,7 @@ function measure(w: number, h: number): Layout {
   const t = -cam.position.z / dir.z;
   const anchor = cam.position.clone().addScaledVector(dir, t);
 
-  // Wide: the world fills the middle of its half, the copy has the other half; sides alternate.
+  // Wide: the world fills the middle of the right half, the copy has the left half, in every section.
   // Narrow: the world stands in the art band above the copy card.
   const aspect = w / Math.max(h, 1);
   const wide = w >= WIDE_PX;
@@ -107,7 +107,7 @@ function measure(w: number, h: number): Layout {
     const ar = sec?.querySelector('.art')?.getBoundingClientRect();
     const artMid = ar && ar.height ? ar.top + sy + ar.height / 2 - top : h * 0.25;
     shift.push(wide ? 0 : THREE.MathUtils.clamp(1 - (artMid / h) * 2, 0, 0.8));
-    shiftX.push(wide ? (i % 2 ? -SIDE_X : SIDE_X) : 0);
+    shiftX.push(wide ? SIDE_X : 0);
     const c = sec ? getComputedStyle(sec).getPropertyValue('--sky').trim() : '';
     sky.push(new THREE.Color(c || '#ffffff'));
   });
@@ -190,7 +190,7 @@ export function mountScene(stage: Stage): void {
       const e = calm ? 0 : smooth(u);
       const next = Math.min(at + 1, SECTIONS.length - 1);
 
-      // Camera: hero pose -> landing pose over the fall; on the plate it only slides sideways.
+      // Camera: hero pose -> landing pose over the fall; on the plate it holds still.
       const hero = heroPose(l);
       land.d = l.landD;
       land.shift = l.shift[at] + (l.shift[next] - l.shift[at]) * e;
