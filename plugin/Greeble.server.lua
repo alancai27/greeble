@@ -151,15 +151,20 @@ local function loadFields()
 end
 loadFields()
 
-saveButton.MouseButton1Click:Connect(function()
-	local url = stripSlash(trim(urlBox.Text))
-	local key = trim(keyBox.Text)
-	local path = stripSlash(trim(kitBox.Text))
+-- A blank key keeps the saved one; a blank kit path means the default.
+local function saveSettings(rawUrl: string, rawKey: string, rawPath: string)
+	local url = stripSlash(trim(rawUrl))
+	local key = trim(rawKey)
+	local path = stripSlash(trim(rawPath))
 	plugin:SetSetting("GreebleUrl", url)
 	if key ~= "" then plugin:SetSetting("GreebleKey", key) end
 	plugin:SetSetting("GreebleKitPath", if path ~= "" then path else DEFAULT_KIT_PATH)
 	loadFields()
 	setStatus("Settings saved.")
+end
+
+saveButton.MouseButton1Click:Connect(function()
+	saveSettings(urlBox.Text, keyBox.Text, kitBox.Text)
 end)
 
 settingsButton.Click:Connect(function()
@@ -339,11 +344,14 @@ local function dress(opts: { zone: string?, maxInstances: number?, seed: number?
 	return result.stats
 end
 
-button.Click:Connect(function()
+local function dressClicked(): boolean
 	setStatus("Dressing zone...")
 	local ok, err = pcall(dress)
 	if not ok then setStatus("Dress failed: " .. tostring(err), true) end
-end)
+	return ok
+end
+
+button.Click:Connect(dressClicked)
 
 ---------------------------------------------------------------------------
 -- Learn style: read the selected finished map and ask the server for a profile.
@@ -397,11 +405,14 @@ local function learn()
 	setStatus(("Learned style from %d instances in zones: %s."):format(total, table.concat(names, ", ")))
 end
 
-learnButton.Click:Connect(function()
+local function learnClicked(): boolean
 	setStatus("Learning style...")
 	local ok, err = pcall(learn)
 	if not ok then setStatus("Learn failed: " .. tostring(err), true) end
-end)
+	return ok
+end
+
+learnButton.Click:Connect(learnClicked)
 
 ---------------------------------------------------------------------------
 -- Listening mode: pick up jobs queued by an agent or the chat panel.
@@ -422,8 +433,9 @@ local function runJob(job)
 	if not sent then setStatus("Could not report job " .. tostring(job.id) .. ": " .. tostring(sendErr), true) end
 end
 
-listenButton.Click:Connect(function()
-	listening = not listening
+local function setListening(on: boolean)
+	if on == listening then return end
+	listening = on
 	listenButton:SetActive(listening)
 	if not listening then
 		setStatus("Stopped listening.")
@@ -451,4 +463,58 @@ listenButton.Click:Connect(function()
 			task.wait(2)
 		end
 	end)
+end
+
+listenButton.Click:Connect(function()
+	setListening(not listening)
+end)
+
+---------------------------------------------------------------------------
+-- Test hook: lets an agent run the same actions from execute_luau without clicking.
+-- Lives in CoreGui, so it is not saved with the place and game scripts cannot reach it.
+
+local CoreGui = game:GetService("CoreGui")
+
+-- Each action returns false when it reported a failure on the status line.
+local actions: { [string]: (args: { [string]: any }) -> boolean } = {
+	settings = function(args)
+		if type(args.url) ~= "string" or type(args.key) ~= "string" then
+			fail("settings needs url and key strings")
+		end
+		local path = args.kitPath
+		if path ~= nil and type(path) ~= "string" then fail("kitPath must be a string") end
+		saveSettings(args.url, args.key, path or "")
+		return true
+	end,
+	learn = function() return learnClicked() end,
+	dress = function() return dressClicked() end,
+	listen = function(args)
+		if type(args.on) ~= "boolean" then fail("listen needs on = true or false") end
+		setListening(args.on)
+		return true
+	end,
+	status = function() return true end,
+}
+
+local old = CoreGui:FindFirstChild("GreebleTestHook")
+if old then old:Destroy() end
+local testHook = Instance.new("BindableFunction")
+testHook.Name = "GreebleTestHook"
+testHook.Archivable = false
+testHook.OnInvoke = function(action: any, args: any)
+	local ran, res = pcall(function(): boolean
+		local fn = if type(action) == "string" then actions[action] else nil
+		if not fn then fail("unknown action " .. tostring(action)) end
+		if args ~= nil and type(args) ~= "table" then fail("args must be a table") end
+		return fn(args or {})
+	end)
+	-- A bad call is not shown on the status line; its message comes back as status instead.
+	if not ran then return { ok = false, status = tostring(res) } end
+	return { ok = res == true, status = statusLabel.Text }
+end
+testHook.Parent = CoreGui
+
+plugin.Unloading:Connect(function()
+	listening = false
+	testHook:Destroy()
 end)
