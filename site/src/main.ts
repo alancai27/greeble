@@ -1,18 +1,15 @@
 import './style.css';
-import { startDrop } from './hero/drop';
-import { svgRenderer } from './hero/render-svg';
+import { createStage } from './three/stage';
+import { studdedBrick } from './three/studs';
 
-const $ = (sel: string) => document.querySelector<HTMLElement>(sel)!;
-const small = () => window.innerWidth < 640;
+const TURF = 0xcfe8c8; // pale turf keeps dark copy readable on top of it
+const PLATE = 32;
+const PLATE_H = 0.4;
 
-// The figure hangs from the "b" in the gap between the wordmark and the copy row,
-// then drops onto the studded strip at the top of the first world.
-startDrop({
-  letter: $('.hero .anchor'),
-  tieX: 0.3,
-  ground: $('#world-1 .strip'),
-  scale: () => (small() ? 0.85 : 1.25),
-  stringLen: (a, h) => $('.hero-row').getBoundingClientRect().top + window.scrollY - a.y - h - 20,
-  landAt: 0.65,
-  render: svgRenderer(document.body),
-});
+// Without WebGL the page is the copy alone.
+const stage = createStage();
+if (stage) {
+  const plate = studdedBrick(PLATE, PLATE_H, PLATE, TURF);
+  plate.position.y = -PLATE_H; // top face at ground level
+  stage.add({ object: plate, update() {} });
+}
