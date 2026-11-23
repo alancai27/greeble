@@ -14,6 +14,13 @@ const inBox = (p, b) =>
 export function place(req) {
   const { surface: hits, cell, assets, keepClear = [], profile, budget = {}, seed = 1, maxSlopeDeg = 35 } = req;
   const rand = rng(seed);
+  // XZ bounds of every sampled hit (before the slope filter); jitter is clamped to these.
+  const lo = [Infinity, Infinity], hi = [-Infinity, -Infinity];
+  for (const h of hits) {
+    lo[0] = Math.min(lo[0], h.position[0]); hi[0] = Math.max(hi[0], h.position[0]);
+    lo[1] = Math.min(lo[1], h.position[2]); hi[1] = Math.max(hi[1], h.position[2]);
+  }
+  const clamp = (n, a, b) => Math.min(b, Math.max(a, n));
   const max = budget.maxInstances ?? Infinity;
   const stats = { placed: 0, skippedKeepClear: 0, skippedOverlap: 0, skippedSlope: 0, budgetHit: false };
   // Drop steep hits first so density targets use the usable area only.
@@ -54,6 +61,9 @@ export function place(req) {
         hit.position[1],
         hit.position[2] + (rand() - 0.5) * 2 * jitter,
       ].map((n) => Math.round(n * 100) / 100);
+      // Clamp after rounding so the returned values sit inside the zone exactly.
+      p[0] = clamp(p[0], lo[0], hi[0]);
+      p[2] = clamp(p[2], lo[1], hi[1]);
       if (keepClear.some((b) => inBox(p, b))) { stats.skippedKeepClear++; continue; }
       const clash =
         taken.some((t) => Math.hypot(t.x - p[0], t.z - p[2]) < t.r + asset.footprint) ||
