@@ -76,3 +76,16 @@ test("maxSlopeDeg 90 keeps the old placements", () => {
   assert.equal(open.stats.skippedSlope, 0);
   assert.deepEqual(open.placements, place(base).placements);
 });
+
+test("placements stay inside the sampled zone's XZ bounds", () => {
+  const xs = base.surface.map((h) => h.position[0]);
+  const zs = base.surface.map((h) => h.position[2]);
+  const [x0, x1, z0, z1] = [Math.min(...xs), Math.max(...xs), Math.min(...zs), Math.max(...zs)];
+  for (const seed of [1, 2, 3, 7, 42, 99]) {
+    const { placements } = place({ ...base, seed });
+    assert.ok(placements.length > 0);
+    for (const { position: [x, , z] } of placements) {
+      assert.ok(x >= x0 && x <= x1 && z >= z0 && z <= z1, `seed ${seed}: out at ${x}, ${z}`);
+    }
+  }
+});
