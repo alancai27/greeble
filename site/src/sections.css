@@ -1,0 +1,81 @@
+/* Sections after the hero. Each world sets its palette on the section:
+   --sky (background), --ground (strip plate), --ink (text). The strip in
+   style.css reads --turf*, so each world maps its ground onto those. */
+
+#world-1 {
+  --ink: #1b2238;
+  --ink-soft: #3f4766;
+}
+
+#world-2 {
+  --sky: #f7e6c4;
+  --ground: #c98b3e;
+  --ground-lit: #e0a95c;
+  --ground-dark: #9c6526;
+  --ink: #3a210c;
+  --ink-soft: #5a3a1d;
+}
+
+#world-3 {
+  --sky: #15112e;
+  --ground: #3a2f73;
+  --ground-lit: #22d3ee;
+  --ground-dark: #241c4f;
+  --ink: #f4efff;
+  --ink-soft: #c9c0ec;
+}
+
+#world-4 {
+  --sky: #e6f0f9;
+  --ground: #c9dbec;
+  --ground-lit: #f8fbff;
+  --ground-dark: #93aecb;
+  --ink: #12304e;
+  --ink-soft: #2f4c69;
+}
+
+#world-2, #world-3, #world-4 {
+  --turf: var(--ground);
+  --turf-lit: var(--ground-lit);
+  --turf-dark: var(--ground-dark);
+  min-height: 70vh;
+  background: var(--sky);
+}
+
+#world-1, #world-2, #world-3, #world-4 {
+  color: var(--ink);
+  padding-bottom: clamp(64px, 12vh, 140px);
+}
+
+/* Room for a world illustration, mounted by another issue. */
+.art { height: clamp(160px, 28vh, 320px); }
+
+.copy {
+  padding: 0 var(--gutter);
+  max-width: calc(60ch + 2 * var(--gutter));
+}
+.copy h2 {
+  margin: 0 0 0.6em;
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: clamp(28px, 4vw, 52px);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+.copy p {
+  margin: 0 0 1em;
+  max-width: 60ch;
+  font-size: clamp(18px, 1.4vw, 21px);
+  color: var(--ink-soft);
+}
+.copy .install { margin-top: 0.5em; }
+
+.site-footer {
+  background: var(--paper);
+  color: var(--ink-soft);
+  padding: clamp(40px, 8vh, 80px) var(--gutter);
+  font-size: 16px;
+}
+.site-footer p { margin: 0 0 0.4em; }
+.footer-mark { font-family: var(--display); font-weight: 800; font-size: 22px; color: var(--ink); }
+.footer-small { font-size: 14px; }
