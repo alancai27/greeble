@@ -149,9 +149,31 @@ test("no circle covers a steep hit", () => {
   }
 });
 
-test("no two circles overlap, with mixed scales", () => {
+// Minimum distance the contract allows between two props of a style.
+const minGap = (style, a, b) => {
+  const sa = style.assets[a.assetId], sb = style.assets[b.assetId];
+  const touch = radius(a) + radius(b);
+  if (a.assetId === b.assetId) return sa.clearance > 0 && sa.spacing > 0 ? 0.6 * sa.spacing : touch;
+  return sa.clearance > 0 && sb.clearance > 0 ? Math.min(touch, (sa.clearance + sb.clearance) / 2) : touch;
+};
+
+test("pairs follow the spacing rule, with mixed scales", () => {
   for (const seed of seeds) {
     const { placements } = place({ ...mixedBase, seed });
+    assert.ok(new Set(placements.map((p) => p.scale)).size > 3, "scales should vary");
+    for (let i = 0; i < placements.length; i++) for (let j = i + 1; j < placements.length; j++) {
+      const a = placements[i], b = placements[j];
+      const d = Math.hypot(a.position[0] - b.position[0], a.position[2] - b.position[2]);
+      const min = minGap(mixed, a, b);
+      assert.ok(d >= min - eps, `seed ${seed}: ${a.assetId}-${b.assetId} at ${d} < ${min}`);
+    }
+  }
+});
+
+test("no two circles overlap, with mixed scales and clearance and spacing 0", () => {
+  const zeroed = { assets: Object.fromEntries(Object.entries(mixed.assets).map(([id, s]) => [id, { ...s, clearance: 0, spacing: 0 }])) };
+  for (const seed of seeds) {
+    const { placements } = place({ ...mixedBase, profile: zeroed, seed });
     assert.ok(new Set(placements.map((p) => p.scale)).size > 3, "scales should vary");
     for (let i = 0; i < placements.length; i++) for (let j = i + 1; j < placements.length; j++) {
       const a = placements[i], b = placements[j];
