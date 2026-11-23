@@ -79,3 +79,12 @@
 .site-footer p { margin: 0 0 0.4em; }
 .footer-mark { font-family: var(--display); font-weight: 800; font-size: 22px; color: var(--ink); }
 .footer-small { font-size: 14px; }
+
+/* Section snap: CSS only. Each section is at least one viewport tall and
+   grows if its copy needs more room; it still snaps to its top. */
+html { scroll-snap-type: y mandatory; }
+.hero, section, .site-footer { scroll-snap-align: start; }
+.hero, section#world-1, section#world-2, section#world-3, section#world-4 { min-height: 100svh; }
+/* The footer is a full screen too, so its snap point is reachable and the
+   corner mark never rests over the last section's copy. */
+.site-footer { min-height: 100svh; display: flex; flex-direction: column; justify-content: center; }

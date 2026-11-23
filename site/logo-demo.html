@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Logo candidates</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <style>
+      * { box-sizing: border-box; }
+      html, body { margin: 0; background: #ffffff; color: #1b2238; font: 16px/1.4 system-ui, sans-serif; }
+      main { max-width: 1000px; margin: 0 auto; padding: 24px 16px 64px; }
+      h1 { font-size: 24px; margin: 0 0 4px; }
+      h2 { font-size: 18px; margin: 32px 0 8px; }
+      p { margin: 0 0 8px; color: #4a5270; }
+      .row { display: flex; flex-wrap: wrap; gap: 12px; }
+      .panel { flex: 1 1 280px; display: flex; align-items: center; gap: 24px; padding: 24px; border-radius: 10px; border: 1px solid #dfe3ec; }
+      .light { background: #ffffff; --ink: #1b2238; }
+      .dark { background: #15112e; --ink: #ffffff; border-color: #15112e; }
+      .panel svg { display: block; flex: none; }
+      .ink { fill: var(--ink); }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Greeble logo candidates</h1>
+      <p>Each at 16, 32 and 128 px, on white and on dark. Candidate 1 ships as the favicon and header mark.</p>
+      <div id="list"></div>
+    </main>
+    <script>
+      const shapes = {
+        c1: '<rect class="ink" x="3" y="13" width="26" height="16" rx="3"/><path d="M7 13a6 6 0 0 1 12 0z" fill="#f2a900"/>',
+        c2: '<rect class="ink" x="2" y="2" width="13" height="13" rx="2"/><rect class="ink" x="17" y="2" width="13" height="13" rx="2"/><rect class="ink" x="2" y="17" width="13" height="13" rx="2"/><circle cx="23.5" cy="23.5" r="6.5" fill="#3f9b4f"/>',
+        c3: '<path class="ink" d="M2 2h28v8H10v12h12v-9h8v17H2z"/><rect x="14" y="13" width="8" height="5" fill="#f2a900"/>',
+      };
+      const names = {
+        c1: '1. Stud block: a plain block with one stud of detail on top (default)',
+        c2: '2. Dressed cell: three blocked-out cells, one dressed',
+        c3: '3. Block G: the initial cut from a single block, with one amber part',
+      };
+      const list = document.getElementById('list');
+      for (const id of ['c1', 'c2', 'c3']) {
+        const shape = shapes[id];
+        const h = document.createElement('h2');
+        h.textContent = names[id];
+        const row = document.createElement('div');
+        row.className = 'row';
+        for (const tone of ['light', 'dark']) {
+          const panel = document.createElement('div');
+          panel.className = 'panel ' + tone;
+          for (const size of [16, 32, 128]) {
+            panel.insertAdjacentHTML('beforeend',
+              `<svg width="${size}" height="${size}" viewBox="0 0 32 32" role="img" aria-label="Candidate ${id.slice(1)} at ${size} px on ${tone}">${shape}</svg>`);
+          }
+          row.append(panel);
+        }
+        list.append(h, row);
+      }
+    </script>
+  </body>
+</html>
