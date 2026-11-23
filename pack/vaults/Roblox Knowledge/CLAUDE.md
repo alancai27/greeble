@@ -5,6 +5,8 @@ Shared rules and setup notes for every Roblox game. Installed at
 
 Load only the file you are routed to. Don't read the whole vault.
 
+Anything that installs, publishes, spends or changes settings outside the project is asked first.
+
 | If asked about | Go to |
 |---|---|
 | How the whole workflow fits together (brain, skills, vaults, APIs, secrets) | `workflow/overview.md` |

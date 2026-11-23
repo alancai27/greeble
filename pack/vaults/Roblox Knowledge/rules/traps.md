@@ -15,7 +15,7 @@ The seed entries came with the vault and have no date.
 
 ### seed: Rokit shims outside a project
 - Broke: Rokit shims fail outside a project
-- Fix: add the tools globally
+- Fix: add the tools globally; ask the dev first
 
 ### seed: New shell misses new tools
 - Broke: a new shell misses freshly installed tools
@@ -31,7 +31,7 @@ The seed entries came with the vault and have no date.
 
 ### seed: Rokit trust
 - Broke: Rokit refuses an untrusted tool
-- Fix: Rokit must trust a tool first
+- Fix: Rokit must trust a tool first; ask the dev first
 
 ### seed: Parallel tool calls
 - Broke: parallel tool calls don't run in order
@@ -47,8 +47,8 @@ The seed entries came with the vault and have no date.
 
 ### seed: Hi3DGen out of GPU memory
 - Broke: Hi3DGen runs out of GPU memory at the decode
-- Fix: move the other models to CPU and empty the cache first
+- Fix: move the other models to CPU and empty the cache first; ask the dev first
 
 ### seed: Python on the Windows console
 - Broke: Python CLIs crash on the Windows console code page
-- Fix: set `PYTHONUTF8=1`
+- Fix: set `PYTHONUTF8=1`; ask the dev first

@@ -5,7 +5,7 @@
 3. Headless Blender decimate from ~1M triangles to 6–10k. Roblox's limit is 20k per mesh.
 4. Bake a normal map from high-poly to low-poly; paint colour from a small spec.
 5. Build hard-edged props (crates, guns) directly in Blender.
-6. Upload with Open Cloud as a Model (`.glb`/`.fbx`, max 20 MB).
+6. Upload with Open Cloud as a Model (`.glb`/`.fbx`, max 20 MB); ask the dev first.
 
 Before import, check triangle count, scale, pivot and texture.
 
