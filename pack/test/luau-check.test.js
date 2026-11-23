@@ -4,7 +4,7 @@ const { spawnSync } = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
 
-const hooks = path.join(__dirname, "..", "claude", "hooks", "greeble");
+const hooks = path.join(__dirname, "..", "claude", "hooks");
 const script = path.join(hooks, "luau-check.sh");
 const samples = path.join(__dirname, "samples");
 
