@@ -162,3 +162,7 @@ permissions. The installer must ask before each of those and default to off.
 - 2026-11-22: We do not train generation models. Hosted tools may wrap existing image and mesh models once licences are checked (replaces the earlier "generation out of scope").
 - 2026-11-22: The pack starts from Matt's workflow brief, Windows first.
 - 2026-11-22: The site is in scope now, as its own area, with a scroll story of a figure falling into worlds that build themselves.
+- 2026-11-23: Profiles are stored on the server per key and per zone label; `/v1/place` no longer takes a profile. A zone with no label uses "default".
+- 2026-11-23: Slope limit is one number per request (`maxSlopeDeg`, default 35), not per asset.
+- 2026-11-23: The plugin stays one file until the human decides on a Rojo build, so studio issues run one at a time.
+- 2026-11-23: The site is static HTML with Vite and TypeScript, no UI framework.

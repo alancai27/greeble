@@ -1,3 +1,5 @@
+> Superseded by `docs/contracts.md`. Kept for history; do not build from this.
+
 # Contract: plugin <-> server
 
 All requests carry `Authorization: Bearer <studio key>`. JSON in, JSON out.
