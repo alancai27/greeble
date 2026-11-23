@@ -317,15 +317,13 @@ local function dress(opts: { zone: string?, maxInstances: number?, seed: number?
 		[409] = "No style learned for this zone yet. Select a finished map and run Learn style first.",
 	})
 
+	local zoneId = tostring(zonePart:GetAttribute("ZoneId") or "zone")
 	local recording = ChangeHistoryService:TryBeginRecording("Greeble: dress zone")
 	local ok, err = pcall(function()
-		local outRoot = workspace:FindFirstChild("Greeble") or Instance.new("Folder")
-		outRoot.Name = "Greeble"
-		outRoot.Parent = workspace
+		-- Build the new output off-tree first, so a failure here leaves the old output alone.
 		local folder = Instance.new("Folder")
-		folder.Name = (zonePart:GetAttribute("ZoneId") or "zone") :: string
-		folder.Parent = outRoot
-
+		folder.Name = zoneId
+		local count = 0
 		for _, p in result.placements do
 			local source = byId[p.assetId]
 			if source then
@@ -335,8 +333,23 @@ local function dress(opts: { zone: string?, maxInstances: number?, seed: number?
 				local pos = Vector3.new(p.position[1], p.position[2] + height, p.position[3])
 				clone:PivotTo(CFrame.new(pos) * CFrame.Angles(0, p.rotationY, 0))
 				clone.Parent = folder
+				count += 1
 			end
 		end
+		-- Nothing placed: keep whatever this zone already had.
+		if count == 0 then
+			folder:Destroy()
+			return
+		end
+
+		local outRoot = workspace:FindFirstChild("Greeble") or Instance.new("Folder")
+		outRoot.Name = "Greeble"
+		outRoot.Parent = workspace
+		-- Replace earlier output for this zone. Unparent rather than Destroy so undo can restore it.
+		for _, child in outRoot:GetChildren() do
+			if child.Name == zoneId and child:IsA("Folder") then child.Parent = nil end
+		end
+		folder.Parent = outRoot
 	end)
 	if recording then
 		ChangeHistoryService:FinishRecording(
