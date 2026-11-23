@@ -43,7 +43,8 @@ key_file="$HOME/.greeble/env"
 if [ ! -f "$key_file" ]; then
   warn "key file" "$key_file missing, run the installer"
 else
-  mode=$(stat -f '%Lp' "$key_file" 2>/dev/null || stat -c '%a' "$key_file" 2>/dev/null)
+  # GNU stat first: its -f means filesystem status and exits 0 with junk.
+  mode=$(stat -c '%a' "$key_file" 2>/dev/null || stat -f '%Lp' "$key_file" 2>/dev/null)
   case "$mode" in
     600|400) ok "key file" "mode $mode" ;;
     *[1-7]|*[1-7]?) fail "key file" "mode $mode is readable by others, chmod 600 $key_file" ;;
