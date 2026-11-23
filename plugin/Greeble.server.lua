@@ -8,8 +8,13 @@
 --   3. Optional: Parts tagged "GreebleKeepClear" mark paths and spawns.
 --   4. Click "Settings" on the Greeble toolbar, enter the server URL, key and kit path, then Save.
 --      The status line at the bottom of that widget shows the last result or error.
+--   5. To learn a style, select the Folders or Models of a finished map and click "Learn style".
+--      Each selection becomes one zone (its "Label" attribute, if set, names it). Every Model
+--      inside whose Name matches a kit Model counts as one instance. The returned profile is
+--      saved and used by "Dress zone".
 
 local HttpService = game:GetService("HttpService")
+local Selection = game:GetService("Selection")
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
 local CollectionService = game:GetService("CollectionService")
 
@@ -44,6 +49,7 @@ end
 
 local toolbar = plugin:CreateToolbar("Greeble")
 local button = toolbar:CreateButton("Dress zone", "Place kit assets in GreebleZone", "")
+local learnButton = toolbar:CreateButton("Learn style", "Learn a style profile from the selected Folders or Models", "")
 local listenButton = toolbar:CreateButton("Listen", "Run jobs sent to Greeble by your agent", "")
 local settingsButton = toolbar:CreateButton("Settings", "Server URL, key, kit folder and last status", "")
 
@@ -329,6 +335,65 @@ button.Click:Connect(function()
 	setStatus("Dressing zone...")
 	local ok, err = pcall(dress)
 	if not ok then setStatus("Dress failed: " .. tostring(err), true) end
+end)
+
+---------------------------------------------------------------------------
+-- Learn style: read the selected finished map and ask the server for a profile.
+
+-- Collect Models under `node` whose Name matches a kit Model. A matched Model is not searched further.
+local function collectInstances(node: Instance, byId: { [string]: Instance }, out: { any })
+	for _, child in node:GetChildren() do
+		local source = if child:IsA("Model") then byId[child.Name] else nil
+		if source then
+			local model = child :: Model
+			table.insert(out, {
+				assetId = model.Name,
+				position = v3(model:GetPivot().Position),
+				scale = model:GetScale() / (source :: Model):GetScale(),
+			})
+		else
+			collectInstances(child, byId, out)
+		end
+	end
+end
+
+local function learn()
+	local selected = Selection:Get()
+	if #selected == 0 then fail("Nothing selected. Select the Folders or Models of a finished map.") end
+	for _, sel in selected do
+		if not (sel:IsA("Folder") or sel:IsA("Model")) then
+			fail(("%s is a %s, not a Folder or Model."):format(sel:GetFullName(), sel.ClassName))
+		end
+	end
+
+	local _, byId = readKit(findKit())
+	local zones, names = {}, {}
+	local total = 0
+	for _, sel in selected do
+		local instances = {}
+		collectInstances(sel, byId, instances)
+		if #instances == 0 then
+			fail(("No kit Models found in %s (kit at %s)."):format(sel:GetFullName(), kitPath()))
+		end
+		local attr = sel:GetAttribute("Label")
+		local zoneLabel = if type(attr) == "string" and trim(attr) ~= "" then attr else nil
+		table.insert(zones, { label = zoneLabel, instances = instances })
+		table.insert(names, zoneLabel or "(no label)")
+		total += #instances
+	end
+
+	local result = post("/v1/profile", { zones = zones })
+	if type(result) ~= "table" or type(result.profile) ~= "table" then
+		fail("Server reply has no profile.")
+	end
+	plugin:SetSetting("GreebleProfile", HttpService:JSONEncode(result.profile))
+	setStatus(("Learned style from %d instances in zones: %s."):format(total, table.concat(names, ", ")))
+end
+
+learnButton.Click:Connect(function()
+	setStatus("Learning style...")
+	local ok, err = pcall(learn)
+	if not ok then setStatus("Learn failed: " .. tostring(err), true) end
 end)
 
 ---------------------------------------------------------------------------
