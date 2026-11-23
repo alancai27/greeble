@@ -161,6 +161,11 @@ export function mountScene(stage: Stage): void {
     applied = -1;
   };
 
+  // The character belongs to world-1: it shrinks away with the meadow through the first
+  // turn, on the same scroll value, and is out of the scene for the later worlds.
+  const character = createHero(() => anchor);
+  const figure = character.object;
+
   const land: Pose = { target: new THREE.Vector3(0, SUBJECT_Y, 0), d: LAND_D, az: LAND_AZ, el: LAND_EL, shift: 0, shiftX: 0 };
   const pose: Pose = { target: new THREE.Vector3(), d: 0, az: 0, el: 0, shift: 0, shiftX: 0 };
 
@@ -232,6 +237,10 @@ export function mountScene(stage: Stage): void {
           progress = Math.max(target, progress - dt / (pre ? BUILD_S : CLEAR_S));
         }
       }
+      const keep = pre ? 1 : calm ? (at === 0 ? 1 : 0) : n === 0 ? 1 - smooth(u / CLEAR_AT) : 0;
+      figure.visible = keep > 0.001;
+      figure.scale.setScalar(Math.max(keep, 0.001));
+
       if (progress !== applied) {
         worlds[shown].setProgress(progress);
         applied = progress;
@@ -239,5 +248,5 @@ export function mountScene(stage: Stage): void {
     },
   });
 
-  stage.add(createHero(() => anchor));
+  stage.add(character);
 }
