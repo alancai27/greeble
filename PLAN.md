@@ -189,3 +189,5 @@ permissions. The installer must ask before each of those and default to off.
 - 2026-11-23: Dressing a zone again replaces that zone's earlier result inside the same undo step (studio lead's choice, accepted).
 - 2026-11-23: Pack layout gains `pack/vaults/_tools/`, installed to `<VAULTS>/_tools/` (pack lead's request). The brief's "Full PC access" rules are left out of the pack until the human decides whether to offer them as a default-no question.
 - 2026-11-23: The brief's "Full PC access" rules ship as an opt-in (human's call): the installer asks a separate question, default no, and says plainly what yes allows. It never changes the permission mode. This replaces the line above that left them out.
+- 2026-11-23: Door 1 passes end to end with a real Claude Code client on unlabelled and labelled zones (#127). Milestone 2 now needs the human's own run with the pack installed.
+- 2026-11-23: `PlaceStats` gains `label`, the label whose style was actually used, so an agent can tell the dev when a labelled zone fell back to the default style.

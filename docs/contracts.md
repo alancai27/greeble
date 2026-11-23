@@ -63,6 +63,7 @@ type PlaceStats = {
   placed: number; skippedKeepClear: number; skippedOverlap: number;
   skippedSlope: number;   // surface hits steeper than maxSlopeDeg
   budgetHit: boolean;
+  label: string;          // the label whose style was used: the zone's own, or "default"
 };
 
 type Job =
