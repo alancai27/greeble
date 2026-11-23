@@ -1,4 +1,4 @@
-/* Brand: the fixed top-right mark and the lighter hero wordmark. */
+/* Brand: the fixed top-right mark and the hero wordmark. */
 
 .brand-mark {
   position: fixed;
@@ -20,5 +20,14 @@
   .brand-mark svg { width: 34px; height: 34px; }
 }
 
-/* Lighter hero title, same typeface. Beats .wordmark in style.css. */
-.hero .wordmark { font-weight: 300; }
+/* Hero wordmark, option 1 of /title-demo.html: Bricolage Grotesque's
+   condensed display cut. Same family as the body, so no extra font loads.
+   Beats .wordmark in style.css. */
+.hero .wordmark {
+  font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+  font-variation-settings: 'opsz' 96, 'wdth' 75;
+  font-weight: 420;
+  font-size: min(23vw, 320px);
+  letter-spacing: -0.02em;
+  line-height: 0.9;
+}
