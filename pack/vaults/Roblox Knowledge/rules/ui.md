@@ -8,4 +8,4 @@
 - Each game keeps a style guide and reference screenshots.
 - Responsive layout, safe areas and motion are covered by the `roblox-ui-review` skill.
 
-The `roblox-ui-review` skill is third-party: install it from the source the owner chose. Nothing from it is copied here.
+The `roblox-ui-review` skill ships in this pack at `<CLAUDE>/skills/roblox-ui-review/`.
