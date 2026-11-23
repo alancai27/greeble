@@ -24,13 +24,15 @@ Open source files only to write an accurate "Owns" or "Contract" section.
 Repeat until your area's milestone is met:
 
 1. `scripts/board <area>`
-2. `needs-review` issue: start a reviewer with exactly
+2. `needs-review` issue: start a reviewer subagent on the
+   reviewer model (see Models) with exactly
    `Read agents/reviewer.md, then review PR #<n>.`
 3. `blocked` issue: `scripts/task <n> --latest`, then
    `scripts/answer <n> "<answer in under 5 lines>"`. If only the human can
    answer (a credential, an account action, a product decision), run
    `scripts/escalate <n> "<question>"` and move on; it reaches them by DM.
-4. `changes-requested` or `todo` issue: start a worker with exactly
+4. `changes-requested` or `todo` issue: start a worker subagent on the worker
+   model (see Models) with exactly
    `Read agents/worker.md, then do issue #<n>.`
    Run at most 3 workers at once in your area.
 5. Nothing open: check the current milestone in `PLAN.md` yourself, then
@@ -68,3 +70,17 @@ Agree with the other affected lead in a comment on one issue, edit
 `docs/contracts.md`, add one line to Decisions in `PLAN.md`, and
 `git pull --rebase` before you push. Then update any open issue that pasted
 the old contract.
+
+## Models
+
+The human sets these. Change them here and nowhere else.
+
+| Role | Model | How it is set |
+|------|-------|---------------|
+| Lead | Fable 5.2 (`claude-fable-5-2`) | `scripts/lead` starts you on it |
+| Worker | Opus 5.5 | pass model `opus` when you start the subagent |
+| Reviewer | Sonnet 5.5 | pass model `sonnet` when you start the subagent |
+
+Always pass the model when you start a subagent. Without it the subagent
+inherits yours, which costs more than the task needs. If a model is refused,
+tell the human once and fall back to your own; don't retry in a loop.

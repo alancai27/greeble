@@ -2,7 +2,8 @@
 # Usage: scripts/lead plan     start the planning lead
 #        scripts/lead AREA     start the lead for one area
 # Runs Claude Code in a detached tmux session named <repo>-lead-<role>.
-# Set LEAD_CMD to change the command or add permission settings.
+# Leads run on LEAD_MODEL (default claude-fable-5-2; see agents/lead.md).
+# Set LEAD_CMD to replace the whole command or add permission settings.
 set -euo pipefail
 . "$(dirname "$0")/_lib.sh"
 
@@ -21,6 +22,6 @@ if tmux has-session -t "$name" 2>/dev/null; then
   die "session $name is already running"
 fi
 
-cmd="${LEAD_CMD:-claude}"
+cmd="${LEAD_CMD:-claude --model ${LEAD_MODEL:-claude-fable-5-2}}"
 tmux new-session -d -s "$name" -c "$root" "$cmd $(printf '%q' "$prompt")"
 echo "started $name (watch it with: tmux attach -t $name)"
