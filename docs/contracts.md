@@ -88,6 +88,10 @@ type LearnStats = { zones: string[]; instances: number; unmatched: number };
 
 - `POST /v1/profile` replaces the stored zones whose labels are in the
   request and keeps the others.
+- The 409 from `POST /v1/place` names the label it looked up and the labels
+  that exist: `no profile for label "default"; learned labels: market, forest`
+  (or `learned labels: none`). A failed `dress_zone` job carries that string
+  as its `result.error`, so an agent can see the mismatch.
 - Steep surface hits are dropped before density is worked out, so targets
   use the usable area only.
 - Profiles and jobs are held in memory until milestone 4.
@@ -96,7 +100,9 @@ type LearnStats = { zones: string[]; instances: number; unmatched: number };
 
 It clones the kit Model named `assetId`, scales it, pivots it to `position`
 with `rotationY`, and parents it under `workspace.Greeble/<zone id>` inside
-one undo recording. Nothing else is written.
+one undo recording. A dress first removes any existing Folder for that zone
+id, inside the same undo recording, and leaves it untouched if the dress
+fails. Nothing else is written.
 
 ## MCP tools (Door 1; Door 2's hosted agent calls the same ones)
 
