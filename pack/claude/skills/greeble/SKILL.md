@@ -64,6 +64,10 @@ Once they confirm, poll the same job id again. Don't submit a duplicate job.
   what was added, confirm it sits inside the zone, and confirm any Parts
   tagged `GreebleKeepClear` were left empty. A screenshot helps the dev see it.
 - Otherwise report the job `result` and ask the dev to look in Studio.
+- If the dev called the zone labelled (or named its Label) and `result.label` is
+  `default`, say in one sentence that its Label `<x>` had no style, so it got the
+  default, and offer to learn one with `label` `<x>`. Learn only if they agree.
+  Otherwise, or if `result` has no `label`, say nothing extra about labels.
 - Never place, move or delete assets by hand, with the Studio MCP or any other
   tool, to fill gaps or fix a result. If it's wrong, retry through Greeble.
 
