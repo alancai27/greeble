@@ -56,3 +56,13 @@ body {
 }
 .install:hover { background: #2c3557; }
 .install:focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+
+/* World-1's copy sits over the 3D world: a soft paper card keeps it readable. */
+#world-1 .copy { position: relative; isolation: isolate; }
+#world-1 .copy::before {
+  content: '';
+  position: absolute; z-index: -1;
+  inset: -24px calc(var(--gutter) - 20px) -8px;
+  background: rgb(255 255 255 / 0.86);
+  border-radius: 16px;
+}
