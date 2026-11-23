@@ -34,6 +34,7 @@ function setup() {
   write(path.join(pack, 'claude', 'skills', 'draft', 'SKILL.md'), 'draft skill\n');
   write(path.join(pack, 'claude', 'commands', 'greeble.md'), 'command\n');
   write(path.join(pack, 'claude', 'commands', 'notes.txt'), 'not a command\n');
+  write(path.join(pack, 'claude', 'agents', 'reviewer.md'), 'reviewer agent\n');
   write(path.join(pack, 'claude', 'hooks', 'on-stop.sh'), '#!/bin/sh\n');
   write(path.join(pack, 'vaults', 'Greeble', 'Home.md'), '# Home\n');
   write(path.join(pack, 'vaults', 'Greeble', 'nested dir', 'Note.md'), 'note\n');
@@ -65,6 +66,7 @@ const expected = [
   '.claude/skills/learn/refs/a.md',
   '.claude/skills/draft/SKILL.md',
   '.claude/commands/greeble.md',
+  '.claude/agents/reviewer.md',
   '.claude/hooks/greeble/on-stop.sh',
   'Documents/Obsidian/Greeble/Home.md',
   'Documents/Obsidian/Greeble/nested dir/Note.md',
@@ -102,7 +104,34 @@ test('missing source dirs are skipped', () => {
   fs.rmSync(path.join(ctx.pack, 'claude', 'hooks'), { recursive: true });
   const r = run(ctx);
   assert.strictEqual(r.code, 0, r.err);
-  assert.strictEqual(lastLine(r.out), 'copied 4, kept 0, skipped 0');
+  assert.strictEqual(lastLine(r.out), 'copied 5, kept 0, skipped 0');
+
+  const ctx2 = setup();
+  fs.rmSync(path.join(ctx2.pack, 'claude', 'agents'), { recursive: true });
+  const r2 = run(ctx2);
+  assert.strictEqual(r2.code, 0, r2.err);
+  assert.ok(!fs.existsSync(path.join(ctx2.home, '.claude/agents')));
+  assert.strictEqual(lastLine(r2.out), `copied ${expected.length - 1}, kept 0, skipped 0`);
+});
+
+test('agents: first run copies, second skips, an edited target is kept', () => {
+  const ctx = setup();
+  const target = path.join(ctx.home, '.claude/agents/reviewer.md');
+  const r1 = run(ctx);
+  assert.strictEqual(r1.code, 0, r1.err);
+  assert.strictEqual(fs.readFileSync(target, 'utf8'), 'reviewer agent\n');
+
+  const r2 = run(ctx);
+  assert.strictEqual(r2.code, 0, r2.err);
+  assert.doesNotMatch(r2.err, /reviewer\.md differs/);
+  assert.strictEqual(lastLine(r2.out), `copied 0, kept 0, skipped ${expected.length}`);
+
+  fs.writeFileSync(target, 'my agent edits\n');
+  const r3 = run(ctx, { input: '' });
+  assert.strictEqual(r3.code, 0, r3.err);
+  assert.match(r3.err, /reviewer\.md differs from the pack\. overwrite\? \[y\/N\]/);
+  assert.strictEqual(fs.readFileSync(target, 'utf8'), 'my agent edits\n');
+  assert.strictEqual(lastLine(r3.out), `copied 0, kept 1, skipped ${expected.length - 1}`);
 });
 
 test('an edited target file is kept on no, or with no input', () => {

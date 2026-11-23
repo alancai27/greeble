@@ -93,6 +93,13 @@ if [ -d "$PACK/claude/commands" ]; then
     install_file "$f" "$CLAUDE/commands/$(basename "$f")"
   done
 fi
+if [ -d "$PACK/claude/agents" ]; then
+  for f in "$PACK/claude/agents"/*.md; do
+    [ -f "$f" ] || continue
+    mkdir -p "$CLAUDE/agents" || die "cannot create $CLAUDE/agents"
+    install_file "$f" "$CLAUDE/agents/$(basename "$f")"
+  done
+fi
 install_tree "$PACK/claude/hooks" "$CLAUDE/hooks/greeble"
 install_children "$PACK/vaults" "$VAULTS"
 
