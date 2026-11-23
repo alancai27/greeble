@@ -1,5 +1,6 @@
 import http from "node:http";
-import { learnProfile } from "./profile.js";
+import { learnZones, zoneKey } from "./profile.js";
+import { getProfile, saveZones } from "./store.js";
 import { place } from "./place.js";
 import { handleMcp } from "./mcp.js";
 import { nextJob, finishJob } from "./jobs.js";
@@ -14,6 +15,7 @@ const send = (res, code, body) => {
 
 /** Route one authenticated request. Returns [status, body]. */
 export function route(key, method, url, body) {
+  if (method === "GET" && url === "/v1/profile") return [200, { profile: getProfile(key) }];
   if (method === "GET" && url === "/v1/jobs/next") {
     const job = nextJob(key);
     return [200, { job: job && { id: job.id, type: job.type, params: job.params } }];
@@ -23,8 +25,14 @@ export function route(key, method, url, body) {
     const out = handleMcp(key, body);
     return out ? [200, out] : [202, undefined];
   }
-  if (url === "/v1/profile") return [200, { profile: learnProfile(body) }];
-  if (url === "/v1/place") return [200, place(body)];
+  if (url === "/v1/profile") return [200, { profile: saveZones(key, learnZones(body)) }];
+  if (url === "/v1/place") {
+    const zones = getProfile(key)?.zones ?? {};
+    const style = zones[zoneKey(body?.zone?.label)] ?? zones.default;
+    if (!style) return [409, { error: "no profile for this zone; POST /v1/profile first" }];
+    const { profile: _ignored, ...req } = body;
+    return [200, place({ ...req, profile: style })];
+  }
   const m = url.match(/^\/v1\/jobs\/([\w-]+)\/result$/);
   if (m) { const job = finishJob(key, m[1], body); return [200, { status: job.status }]; }
   return [404, { error: "not found" }];
@@ -46,7 +54,7 @@ export function makeHandler(keys) {
         const [code, out] = route(key, req.method, req.url, raw ? JSON.parse(raw) : undefined);
         send(res, code, out);
       } catch (e) {
-        send(res, 400, { error: String(e.message ?? e) });
+        send(res, e?.status ?? 400, { error: String(e?.message ?? e) });
       }
     });
   };

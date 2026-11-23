@@ -31,3 +31,25 @@ export function learnProfile({ instances, area }) {
   }
   return { assets };
 }
+
+/** Normalise a zone label: trimmed, lowercased; missing or "" -> "default". */
+export const zoneKey = (label) => (typeof label === "string" && label.trim().toLowerCase()) || "default";
+
+/** XZ bounding-box area of a list of instances. */
+const bboxArea = (instances) => {
+  if (!instances.length) return 0;
+  const xs = instances.map((i) => i.position[0]);
+  const zs = instances.map((i) => i.position[2]);
+  return (Math.max(...xs) - Math.min(...xs)) * (Math.max(...zs) - Math.min(...zs));
+};
+
+/** Learn one ZoneStyle per zone label from a ProfileRequest. */
+export function learnZones({ zones } = {}) {
+  if (!Array.isArray(zones)) throw new Error("zones must be an array");
+  const out = {};
+  for (const z of zones) {
+    const instances = z.instances ?? [];
+    out[zoneKey(z.label)] = learnProfile({ instances, area: z.area ?? bboxArea(instances) });
+  }
+  return out;
+}
