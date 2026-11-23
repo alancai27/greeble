@@ -1,0 +1,7 @@
+id	regex	message
+deprecated-wait	(?<![\w.:])(?:wait|spawn|delay)\s*\(	wait(), spawn() and delay() are deprecated; use task.wait, task.spawn or task.delay
+remote-unchecked	^([ \t]*)[^\n]*OnServerEvent:Connect\(function\s*\([^)]*,[^)]*\)(?:(?!\n\1end\b)(?!typeof\s*\(|\btype\s*\()[\s\S])*\n\1end\b	OnServerEvent handler never checks its arguments; validate each one with typeof() before using it
+setasync	:SetAsync\s*\(	SetAsync overwrites whatever is saved; use UpdateAsync to change saved player data
+receipt-grant-before-save	(?:(?i:processreceipt)\s*=\s*function|function\s+[\w.:]*(?i:processreceipt))\b(?:(?!Async\s*\()[\s\S])*?\KPurchaseGranted	ProcessReceipt returns PurchaseGranted before saving the purchase; save it with UpdateAsync first
+while-no-yield	^([ \t]*)while\s+true\s+do\b(?:(?!\n\1end\b)(?!wait\s*\(|:Wait\s*\(|coroutine\.yield\b)[\s\S])*\n\1end\b	while true do loop never yields; add task.wait() inside it
+client-currency	\A(?=[\s\S]*\bLocalPlayer\b)[\s\S]*?\K\b(?:leaderstats|[Cc]oins|[Cc]ash|[Gg]old|[Gg]ems|[Mm]oney|[Cc]urrency)\b[^\n=]*\.Value\s*[-+*/]?=(?!=)	currency changed on the client; only the server may change currency, so fire a remote and let the server do it

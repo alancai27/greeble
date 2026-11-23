@@ -1,0 +1,7 @@
+{
+  "name": "greeble-pack",
+  "private": true,
+  "scripts": {
+    "test": "node --test"
+  }
+}
