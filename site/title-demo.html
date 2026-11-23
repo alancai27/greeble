@@ -22,23 +22,29 @@
 
       /* Option 1 is the live rule in brand.css (.hero .wordmark). */
 
-      /* Option 2: a characterful serif with chunky, toy-like brackets. */
+      /* Every option is opened up the same way: open tracking (--track),
+         its widest cut where it has one, and sized to roughly 75% of the
+         content width on desktop and nearly full width on a phone. The end
+         margin from brand.css cancels the trailing letter-spacing. */
+
+      /* Option 2: a characterful serif with chunky, toy-like brackets.
+         No width axis, so the tracking does the opening up. */
       .opt-2 .hero .wordmark {
+        --track: 0.05em;
         font-family: 'Young Serif', Georgia, serif;
         font-variation-settings: normal;
         font-weight: 400;
-        font-size: min(19vw, 270px);
-        letter-spacing: -0.025em;
+        font-size: min(21vw, 240px);
         line-height: 0.95;
       }
 
-      /* Option 3: a narrowed monospace, every letter on the same grid like studs. */
+      /* Option 3: a wide monospace, every letter on the same grid like studs. */
       .opt-3 .hero .wordmark {
+        --track: 0.02em;
         font-family: 'Martian Mono', ui-monospace, monospace;
-        font-variation-settings: 'wdth' 75;
+        font-variation-settings: 'wdth' 112.5;
         font-weight: 500;
-        font-size: min(16vw, 220px);
-        letter-spacing: -0.06em;
+        font-size: min(16vw, 182px);
         line-height: 0.95;
       }
     </style>
@@ -47,7 +53,7 @@
     <main>
       <section class="option opt-1" aria-label="Option 1">
         <header class="hero">
-          <p class="caption"><b>1</b>Bricolage Grotesque, condensed display cut. Ships on the main page.</p>
+          <p class="caption"><b>1</b>Bricolage Grotesque, widest display cut, open tracking. Ships on the main page.</p>
           <h1 class="wordmark">Gree<span class="anchor">b</span>le</h1>
           <div class="hero-row">
             <p class="lede">Greeble dresses your blocked-out zones with your own assets, in your studio's style.</p>
@@ -69,7 +75,7 @@
 
       <section class="option opt-3" aria-label="Option 3">
         <header class="hero">
-          <p class="caption"><b>3</b>Martian Mono, narrowed, on a fixed letter grid.</p>
+          <p class="caption"><b>3</b>Martian Mono, widest cut, on a fixed letter grid.</p>
           <h1 class="wordmark">Gree<span class="anchor">b</span>le</h1>
           <div class="hero-row">
             <p class="lede">Greeble dresses your blocked-out zones with your own assets, in your studio's style.</p>

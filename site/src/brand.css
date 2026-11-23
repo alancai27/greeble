@@ -21,13 +21,19 @@
 }
 
 /* Hero wordmark, option 1 of /title-demo.html: Bricolage Grotesque's
-   condensed display cut. Same family as the body, so no extra font loads.
-   Beats .wordmark in style.css. */
+   display cut at its widest width, with open tracking, sized to fill most
+   of the hero. Same family as the body, so no extra font loads.
+   Beats .wordmark in style.css.
+   --track is the letter-spacing; the negative end margin cancels the
+   spacing the browser adds after the last letter, so the word's box ends
+   on the "e" and stays centred if it is ever centred. */
 .hero .wordmark {
+  --track: 0.04em;
   font-family: 'Bricolage Grotesque', system-ui, sans-serif;
-  font-variation-settings: 'opsz' 96, 'wdth' 75;
+  font-variation-settings: 'opsz' 96, 'wdth' 100;
   font-weight: 420;
-  font-size: min(23vw, 320px);
-  letter-spacing: -0.02em;
+  font-size: min(24.5vw, 280px);
+  letter-spacing: var(--track);
+  margin-inline-end: calc(-1 * var(--track));
   line-height: 0.9;
 }
