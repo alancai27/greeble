@@ -46,7 +46,7 @@
 #world-1, #world-2, #world-3, #world-4 { color: var(--ink); }
 
 /* Layout. Narrow: the world stands in the art band, the copy is a card below it.
-   Wide (1024px and up): world and copy each take a half, alternating sides.
+   Wide (1024px and up): copy column on the left, world on the right, in every section.
    scene.ts reads .art to place the world, so keep it in the flow on narrow screens. */
 #world-1, #world-2, #world-3, #world-4 {
   display: flex;
@@ -68,23 +68,30 @@
 .has-stage #world-1, .has-stage #world-2, .has-stage #world-3, .has-stage #world-4 { background: none; }
 
 @media (min-width: 1024px) {
+  /* Every section is one screen: the copy column takes the left 46%, centred vertically,
+     and scrolls inside itself only if it cannot fit. scene.ts keeps the world on the right. */
   #world-1, #world-2, #world-3, #world-4 {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 46% 1fr;
+    grid-template-rows: minmax(0, 1fr);
     align-items: center;
+    box-sizing: border-box;
+    height: 100svh;
     padding: var(--gutter) 0;
   }
   .strip, .art { display: none; }
   .copy {
     grid-row: 1;
-    justify-self: center;
+    grid-column: 1;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: none;
+    max-height: 100%;
+    overflow-y: auto;
     margin: 0;
-    padding: 0 var(--gutter);
-    max-width: min(100%, calc(60ch + 2 * var(--gutter)));
+    padding: 0 var(--gutter) 0 clamp(var(--gutter), 5vw, 96px);
     background: none;
   }
-  #world-1 .copy, #world-3 .copy { grid-column: 1; }
-  #world-2 .copy, #world-4 .copy { grid-column: 2; }
 }
 
 .copy h2 {
