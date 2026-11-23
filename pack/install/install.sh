@@ -152,4 +152,9 @@ else
 fi
 
 echo "copied $copied, kept $kept, skipped $skipped"
+
+# Last step: the greeble MCP entry and its connection check.
+if [ -f "$PACK/install/mcp.sh" ]; then
+  exec bash "$PACK/install/mcp.sh"
+fi
 exit 0
