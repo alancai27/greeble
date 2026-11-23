@@ -10,7 +10,9 @@ test("mcp handshake and tool list", () => {
   assert.equal(rpc("a", "initialize", { protocolVersion: "2025-06-18" }).result.serverInfo.name, "greeble");
   assert.deepEqual(route("a", "POST", "/mcp", { jsonrpc: "2.0", method: "notifications/initialized" }), [202, undefined]);
   const names = rpc("a", "tools/list").result.tools.map((t) => t.name);
-  assert.deepEqual(names, ["greeble_dress_zone", "greeble_job_status"]);
+  assert.deepEqual(names, ["greeble_dress_zone", "greeble_learn_profile", "greeble_job_status"]);
+  const learn = rpc("a", "tools/list").result.tools.find((t) => t.name === "greeble_learn_profile");
+  assert.match(learn.description, /Studio must be open with the Greeble plugin listening/);
   assert.equal(rpc("a", "nope").error.code, -32601);
 });
 
@@ -38,4 +40,42 @@ test("one studio cannot see or finish another studio's job", () => {
 
 test("bad tool input comes back as a tool error", () => {
   assert.equal(rpc("a", "tools/call", { name: "greeble_dress_zone", arguments: {} }).result.isError, true);
+});
+
+test("learn_profile job reaches the plugin with path and label", () => {
+  resetJobs();
+  const { id, status } = parse(rpc("a", "tools/call", {
+    name: "greeble_learn_profile", arguments: { path: "Workspace/Map/Market", label: "market" },
+  }));
+  assert.equal(status, "queued");
+  const [, next] = route("a", "GET", "/v1/jobs/next");
+  assert.equal(next.job.id, id);
+  assert.equal(next.job.type, "learn_profile");
+  assert.deepEqual(next.job.params, { path: "Workspace/Map/Market", label: "market" });
+});
+
+test("learn_profile without label omits it from params", () => {
+  resetJobs();
+  parse(rpc("a", "tools/call", { name: "greeble_learn_profile", arguments: { path: "Workspace/Town" } }));
+  const [, next] = route("a", "GET", "/v1/jobs/next");
+  assert.deepEqual(next.job.params, { path: "Workspace/Town" });
+});
+
+test("LearnStats result comes back through job status", () => {
+  resetJobs();
+  const { id } = parse(rpc("a", "tools/call", { name: "greeble_learn_profile", arguments: { path: "Workspace/Map" } }));
+  route("a", "GET", "/v1/jobs/next");
+  const stats = { zones: ["Market", "Plaza"], instances: 140, unmatched: 3 };
+  route("a", "POST", `/v1/jobs/${id}/result`, { ok: true, result: stats });
+  const done = parse(rpc("a", "tools/call", { name: "greeble_job_status", arguments: { id } }));
+  assert.equal(done.status, "done");
+  assert.deepEqual(done.result, stats);
+});
+
+test("learn_profile with missing or empty path is a tool error naming path", () => {
+  for (const args of [{}, { path: "" }]) {
+    const r = rpc("a", "tools/call", { name: "greeble_learn_profile", arguments: args }).result;
+    assert.equal(r.isError, true);
+    assert.match(r.content[0].text, /path/);
+  }
 });
