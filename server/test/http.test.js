@@ -86,3 +86,44 @@ test("learn then place round trip", async () => {
   assert.ok(out.placements.length > 0);
   assert.ok(out.placements.every((p) => p.assetId === "Barrel"));
 });
+
+// The sequence Claude Code (a real MCP client over HTTP) sends, as observed against a live server.
+const mcp = (body, method = "POST") => fetch(base + "/mcp", {
+  method,
+  headers: { authorization: "Bearer k1", "content-type": "application/json",
+    accept: method === "GET" ? "text/event-stream" : "application/json, text/event-stream" },
+  body: body === undefined ? undefined : JSON.stringify(body),
+});
+
+test("real client handshake: initialize, notification, tools/list, tools/call", async () => {
+  let res = await mcp({ jsonrpc: "2.0", id: 0, method: "initialize",
+    params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "claude-code", version: "x" } } });
+  assert.equal(res.status, 200);
+  assert.match(res.headers.get("content-type"), /^application\/json/);
+  assert.equal((await res.json()).result.serverInfo.name, "greeble");
+
+  res = await mcp({ jsonrpc: "2.0", method: "notifications/initialized" });
+  assert.equal(res.status, 202);
+  assert.equal(await res.text(), "");
+
+  res = await mcp({ jsonrpc: "2.0", id: 1, method: "tools/list" });
+  assert.ok((await res.json()).result.tools.some((t) => t.name === "greeble_dress_zone"));
+
+  res = await mcp({ jsonrpc: "2.0", id: 2, method: "tools/call",
+    params: { name: "greeble_dress_zone", arguments: { zone: "Market" } } });
+  const { id } = JSON.parse((await res.json()).result.content[0].text);
+  const [code, next] = await call("GET", "/v1/jobs/next");
+  assert.equal(code, 200);
+  assert.equal(next.job.id, id);
+});
+
+test("GET /mcp (client opening an SSE stream) is 405 so the client falls back to plain POST", async () => {
+  const res = await mcp(undefined, "GET");
+  assert.equal(res.status, 405);
+});
+
+test("MCP request with an unknown key is 401", async () => {
+  const res = await fetch(base + "/mcp", { method: "POST", headers: { authorization: "Bearer nope" },
+    body: JSON.stringify({ jsonrpc: "2.0", id: 0, method: "initialize" }) });
+  assert.equal(res.status, 401);
+});
