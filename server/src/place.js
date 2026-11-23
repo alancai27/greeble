@@ -12,10 +12,18 @@ const inBox = (p, b) =>
  * this function stays the thing that enforces the hard rules.
  */
 export function place(req) {
-  const { surface, cell, assets, keepClear = [], profile, budget = {}, seed = 1 } = req;
+  const { surface: hits, cell, assets, keepClear = [], profile, budget = {}, seed = 1, maxSlopeDeg = 35 } = req;
   const rand = rng(seed);
   const max = budget.maxInstances ?? Infinity;
-  const stats = { placed: 0, skippedKeepClear: 0, skippedOverlap: 0, budgetHit: false };
+  const stats = { placed: 0, skippedKeepClear: 0, skippedOverlap: 0, skippedSlope: 0, budgetHit: false };
+  // Drop steep hits first so density targets use the usable area only.
+  // Normals are unit length with Y up, so the slope is acos(normal.y).
+  const surface = hits.filter((hit) => {
+    const ny = Math.min(1, Math.max(-1, hit.normal?.[1] ?? 1));
+    const steep = (Math.acos(ny) * 180) / Math.PI > maxSlopeDeg;
+    if (steep) stats.skippedSlope++;
+    return !steep;
+  });
   const placements = [];
   const taken = []; // {x, z, r}
   const area = surface.length * cell * cell;
