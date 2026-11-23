@@ -64,7 +64,18 @@ type PlaceStats = {
   skippedSlope: number;   // surface hits steeper than maxSlopeDeg
   budgetHit: boolean;
   label: string;          // the label whose style was used: the zone's own, or "default"
+  tooLarge: string[];     // asset ids left out because they cannot fit this zone
 };
+
+// Footprint rules (the placer treats each prop as a circle of radius
+// footprint * scale around its position):
+// - the whole circle stays inside the XZ bounds of the surface hits;
+// - the circle never touches a keepClear box (counted in skippedKeepClear);
+// - the circle never covers a steep surface hit (counted in skippedSlope,
+//   together with the steep hits themselves);
+// - two props' circles never overlap;
+// - an asset whose diameter at scaleMax is more than half the zone's shorter
+//   side is left out and listed in tooLarge.
 
 type Job =
   | { id: string; type: "dress_zone"; params: { zone?: string; maxInstances?: number; seed?: number } }
@@ -165,8 +176,13 @@ official source by the installer, never copied here.
 | `GreebleKeepClear` | tag | Parts whose boxes become `keepClear` |
 | `Label` | attribute | On a zone Part, or on a Folder or Model given to Learn style |
 
-Learn style matches a map's Models to kit assets by Name. `assetId` is the
-kit Model's Name.
+Learn style matches a map's Models to kit assets by Name and shape. A map
+Model counts as kit asset X only when its bounding-box size is the kit
+Model's size times one uniform factor, the three axes agreeing within 15%.
+That factor is the instance's `scale`. Same name but a different shape counts
+as unmatched. `assetId` is the kit Model's Name. `footprint` is half the
+larger of the kit Model's bounding-box X and Z sizes. Props are placed by
+bounding-box bottom, not pivot.
 
 ## Site
 
