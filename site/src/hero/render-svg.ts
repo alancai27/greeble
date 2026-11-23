@@ -1,10 +1,10 @@
-// PROTOTYPE (issue #9): layered SVG renderer in document coordinates.
-import { FIGURE, FIG_H, INK } from './figure';
-import type { FigureState } from './drop';
+// SVG overlay for the figure and its string, drawn in document coordinates.
+import { FIGURE, FIG_H, INK, MOUTH } from './figure';
+import type { FigureState, Pt } from './drop';
 
 const NS = 'http://www.w3.org/2000/svg';
 
-export function svgRenderer(host: HTMLElement, opts: { string?: string } = {}) {
+export function svgRenderer(host: HTMLElement) {
   const layer = document.createElement('div');
   layer.className = 'figure-layer';
   layer.setAttribute('aria-hidden', 'true');
@@ -13,7 +13,7 @@ export function svgRenderer(host: HTMLElement, opts: { string?: string } = {}) {
   svg.setAttribute('height', '1');
   const mkLine = () => {
     const l = document.createElementNS(NS, 'line');
-    l.setAttribute('stroke', opts.string ?? INK);
+    l.setAttribute('stroke', INK);
     l.setAttribute('stroke-width', '1.5');
     l.setAttribute('stroke-linecap', 'round');
     svg.appendChild(l);
@@ -28,14 +28,22 @@ export function svgRenderer(host: HTMLElement, opts: { string?: string } = {}) {
     el.setAttribute('y', String(r.y));
     el.setAttribute('width', String(r.w));
     el.setAttribute('height', String(r.h));
+    if (r.rx) el.setAttribute('rx', String(r.rx));
     el.setAttribute('fill', r.fill);
     g.appendChild(el);
   }
+  const mouth = document.createElementNS(NS, 'path');
+  mouth.setAttribute('d', MOUTH);
+  mouth.setAttribute('fill', 'none');
+  mouth.setAttribute('stroke', INK);
+  mouth.setAttribute('stroke-width', '1.4');
+  mouth.setAttribute('stroke-linecap', 'round');
+  g.appendChild(mouth);
   svg.appendChild(g);
   layer.appendChild(svg);
   host.appendChild(layer);
 
-  const set = (l: SVGLineElement, a: { x: number; y: number }, b: { x: number; y: number }) => {
+  const set = (l: SVGLineElement, a: Pt, b: Pt) => {
     l.setAttribute('x1', a.x.toFixed(2));
     l.setAttribute('y1', a.y.toFixed(2));
     l.setAttribute('x2', b.x.toFixed(2));
