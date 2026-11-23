@@ -1,5 +1,7 @@
 # Greeble
 
+This project is private. Do not share the code or this repository outside the team.
+
 Set-dressing agent for Roblox Studio. A studio gives it a blocked-out zone and
 its own asset kit; Greeble places the assets in that studio's style as normal,
 editable instances.
