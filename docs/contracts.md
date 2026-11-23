@@ -118,7 +118,11 @@ selection, and reports `LearnStats`. Map data still goes plugin -> server.
   streaming. Server name in the client config: `greeble`.
 - Claude Code entry: HTTP transport, URL `${GREEBLE_URL}/mcp`, header
   `Authorization: Bearer ${GREEBLE_KEY}`. The key is read from the
-  environment and is never written into a config file or the pack.
+  environment and is never written into an MCP config file or the pack.
+- On macOS the installer stores `GREEBLE_URL` and `GREEBLE_KEY` in
+  `$HOME/.greeble/env` (mode 600) and, after asking, adds one line to
+  `~/.zshrc` that sources it. The key is read from the environment or a
+  silent prompt, never from a command-line argument.
 
 ## Pack layout
 
