@@ -103,6 +103,12 @@ fi
 install_tree "$PACK/claude/hooks" "$CLAUDE/hooks/greeble"
 install_children "$PACK/vaults" "$VAULTS"
 
+# Offer to turn the pack's hooks on in settings.json. A failure there (say, a
+# settings.json that does not parse) is reported and the install goes on.
+if [ -f "$PACK/install/hooks.sh" ]; then
+  GREEBLE_CLAUDE_DIR="$CLAUDE" bash "$PACK/install/hooks.sh" || true
+fi
+
 # Server URL and key.
 url="${GREEBLE_URL:-}"
 key="${GREEBLE_KEY:-}"
