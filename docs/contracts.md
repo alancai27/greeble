@@ -65,8 +65,14 @@ type PlaceStats = {
   budgetHit: boolean;
 };
 
-type Job = { id: string; type: "dress_zone"; params: { zone?: string; maxInstances?: number; seed?: number } };
+type Job =
+  | { id: string; type: "dress_zone"; params: { zone?: string; maxInstances?: number; seed?: number } }
+  | { id: string; type: "learn_profile"; params: { path: string; label?: string } };
 type JobStatus = "queued" | "running" | "done" | "failed";
+
+// Result of a learn_profile job. zones: the labels that were stored.
+// unmatched: Models under path whose Name is not a kit asset (skipped).
+type LearnStats = { zones: string[]; instances: number; unmatched: number };
 ```
 
 ## Routes
@@ -77,7 +83,7 @@ type JobStatus = "queued" | "running" | "done" | "failed";
 | GET | /v1/profile | none | `{ profile: Profile \| null }` |
 | POST | /v1/place | `PlaceRequest` | `{ placements: Placement[], stats: PlaceStats }` |
 | GET | /v1/jobs/next | none | `{ job: Job \| null }`; marks the job running |
-| POST | /v1/jobs/:id/result | `{ ok: true, result: PlaceStats }` or `{ ok: false, result: { error: string } }` | `{ status: JobStatus }` |
+| POST | /v1/jobs/:id/result | `{ ok: true, result: PlaceStats \| LearnStats }` or `{ ok: false, result: { error: string } }` | `{ status: JobStatus }` |
 | POST | /mcp | JSON-RPC | JSON-RPC |
 
 - `POST /v1/profile` replaces the stored zones whose labels are in the
@@ -95,7 +101,45 @@ one undo recording. Nothing else is written.
 ## MCP tools (Door 1; Door 2's hosted agent calls the same ones)
 
 - `greeble_dress_zone { zone, maxInstances?, seed? }` -> `{ id, status }`
-- `greeble_job_status { id }` -> `{ id, status, result }`
+- `greeble_learn_profile { path, label? }` -> `{ id, status }`. Queues a
+  `learn_profile` job. `path` is slash-separated from `game` to a Folder or
+  Model of a finished map, for example `Workspace/Map/Market`. `label`
+  overrides the instance's `Label` attribute; neither set means "default".
+- `greeble_job_status { id }` -> `{ id, status, result }`. `result` is
+  `PlaceStats` or `LearnStats` when done, `{ error }` when failed.
+
+The plugin, in Listen mode, runs a `learn_profile` job through the same code
+as the Learn style button, reading the instance at `path` instead of the
+selection, and reports `LearnStats`. Map data still goes plugin -> server.
+
+### Connecting a dev's agent (Door 1)
+
+- The MCP server is `POST <GREEBLE_URL>/mcp`, plain JSON responses, no
+  streaming. Server name in the client config: `greeble`.
+- Claude Code entry: HTTP transport, URL `${GREEBLE_URL}/mcp`, header
+  `Authorization: Bearer ${GREEBLE_KEY}`. The key is read from the
+  environment and is never written into a config file or the pack.
+
+## Pack layout
+
+What ships is only what we wrote. Third-party tools are installed from their
+official source by the installer, never copied here.
+
+| In the repo | Installed to |
+|-------------|--------------|
+| `pack/claude/skills/<name>/SKILL.md` | `<CLAUDE>/skills/<name>/` |
+| `pack/claude/commands/<name>.md` | `<CLAUDE>/commands/` |
+| `pack/claude/hooks/` | `<CLAUDE>/hooks/greeble/` |
+| `pack/vaults/Roblox Knowledge/` | `<VAULTS>/Roblox Knowledge/` |
+| `pack/vaults/_templates/` | `<VAULTS>/_templates/` |
+| `pack/install/` | not installed; the installer and its scripts |
+
+- `<CLAUDE>` defaults to `$HOME/.claude`, `<VAULTS>` to
+  `$HOME/Documents/Obsidian`. No file in the pack hard-codes a user path.
+- Every skill has front matter with `name` and a "use when" `description`.
+- Nothing in the pack contains a key, a server-side prompt or placement logic.
+- The installer asks before anything that widens the agent's control of the
+  PC or its permission mode, and the default answer is no.
 
 ## Plugin settings and Studio conventions
 
@@ -122,3 +166,5 @@ kit Model's Name.
 |------|---------|-------|
 | `GREEBLE_KEYS` | server | Comma-separated studio keys. Required |
 | `PORT` | server | Default 8787 |
+| `GREEBLE_URL` | dev's machine | Server base URL, no trailing slash. Read by the MCP entry |
+| `GREEBLE_KEY` | dev's machine | The dev's studio key. Read by the MCP entry. Never printed |
