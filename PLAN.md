@@ -184,3 +184,4 @@ permissions. The installer must ask before each of those and default to off.
 - 2026-11-23: The planning lead leads platform. Pack has no lead until the human starts one.
 - 2026-11-23: The pack installer targets macOS first (human's call), replacing "Windows first". It is a shell script tested on the human's Mac; the PowerShell versions of the installer and the Luau hook wait until a Windows user needs them. The pack lead is running.
 - 2026-11-23: On macOS the dev's key is stored in `$HOME/.greeble/env` (mode 600), sourced from `~/.zshrc` after the installer asks (pack lead's choice, accepted). A plain file, as other developer tools do; the Keychain can replace it later if a studio asks.
+- 2026-11-23: Pack layout gains `pack/claude/agents/<name>.md`, installed to `<CLAUDE>/agents/`, for the brief's three agents (pack lead's request).

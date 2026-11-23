@@ -132,6 +132,7 @@ official source by the installer, never copied here.
 | In the repo | Installed to |
 |-------------|--------------|
 | `pack/claude/skills/<name>/SKILL.md` | `<CLAUDE>/skills/<name>/` |
+| `pack/claude/agents/<name>.md` | `<CLAUDE>/agents/` |
 | `pack/claude/commands/<name>.md` | `<CLAUDE>/commands/` |
 | `pack/claude/hooks/` | `<CLAUDE>/hooks/greeble/` |
 | `pack/vaults/Roblox Knowledge/` | `<VAULTS>/Roblox Knowledge/` |
