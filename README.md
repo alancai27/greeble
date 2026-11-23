@@ -6,12 +6,14 @@ editable instances.
 
 - `plugin/` thin Studio client. Samples the zone, calls the server, creates instances.
 - `server/` everything of value: style profiles and placement. `npm test`, `GREEBLE_KEYS=... npm start`.
-- `docs/contract.md` the JSON both sides agree on.
+- `docs/contract-draft.md` the JSON both sides agree on.
+- `BRIEF.md`, `PLAN.md` what we're building and in what order (leads only).
+- `AGENTS.md`, `agents/`, `scripts/` the agent-team setup, copied from menagerie.
 
 ## State
 
-- Server: profile learning (density, scale range, spacing) and a rule-based
-  baseline placer with keep-clear, overlap and budget rules. Tested.
-- Plugin: written, **not yet run in Studio**.
-- Not built: learning a profile from a map inside the plugin, the agent layer
-  that plans zones and reviews screenshots, accounts and billing.
+- Server: profile learning, rule-based placer, job queue, MCP endpoint. Tested.
+- Plugin: dress button and Listen mode written, **not yet run in Studio**.
+- MCP endpoint: tested with hand-written JSON-RPC, **not yet with a real client**.
+- Not built: the hosted agent and chat panel, profile learning from inside the
+  plugin, the installer and rules pack, accounts and billing.

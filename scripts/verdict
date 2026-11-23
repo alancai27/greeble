@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# Usage: scripts/verdict PR approve
+#        scripts/verdict PR changes NOTES.md
+# Reviewer: merge the pull request, or send it back with notes.
+set -euo pipefail
+. "$(dirname "$0")/_lib.sh"
+
+usage="usage: scripts/verdict PR approve | scripts/verdict PR changes NOTES.md"
+pr="${1:?$usage}"
+action="${2:?$usage}"
+
+branch=$(gh pr view "$pr" --json headRefName --jq .headRefName)
+case "$branch" in
+  issue-*) n="${branch#issue-}" ;;
+  *) die "PR #$pr is not on an issue-N branch" ;;
+esac
+
+case "$action" in
+  approve)
+    if ! out=$(gh pr checks "$pr" 2>&1); then
+      case "$out" in
+        *"no checks reported"*) ;;
+        *)
+          echo "$out" | tail -n 5
+          die "CI is not green on PR #$pr"
+          ;;
+      esac
+    fi
+    gh pr merge "$pr" --squash >/dev/null
+    echo "merged PR #$pr (issue #$n closes with it)"
+    ;;
+  changes)
+    notes="${3:?$usage}"
+    [ -f "$notes" ] || die "no such file: $notes"
+    gh pr comment "$pr" --body-file "$notes" >/dev/null
+    set_state "$n" changes-requested
+    echo "changes requested on PR #$pr (issue #$n)"
+    ;;
+  *)
+    die "$usage"
+    ;;
+esac

@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Usage: scripts/lead plan     start the planning lead
+#        scripts/lead AREA     start the lead for one area
+# Runs Claude Code in a detached tmux session named <repo>-lead-<role>.
+# Set LEAD_CMD to change the command or add permission settings.
+set -euo pipefail
+. "$(dirname "$0")/_lib.sh"
+
+role="${1:?usage: scripts/lead plan|AREA}"
+root=$(main_root)
+name="$(basename "$root")-lead-$role"
+
+if [ "$role" = "plan" ]; then
+  prompt="Read agents/lead.md. You are the planning lead. Write PLAN.md from BRIEF.md."
+else
+  prompt="Read agents/lead.md. Your area is $role."
+fi
+
+command -v tmux >/dev/null || die "tmux is not installed"
+if tmux has-session -t "$name" 2>/dev/null; then
+  die "session $name is already running"
+fi
+
+cmd="${LEAD_CMD:-claude}"
+tmux new-session -d -s "$name" -c "$root" "$cmd $(printf '%q' "$prompt")"
+echo "started $name (watch it with: tmux attach -t $name)"

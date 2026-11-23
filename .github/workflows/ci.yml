@@ -1,0 +1,22 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+      - name: Install
+        run: |
+          for pkg in server agent pack site; do
+            if [ -f "$pkg/package-lock.json" ]; then npm ci --prefix "$pkg"; fi
+          done
+      - name: Check
+        run: scripts/check

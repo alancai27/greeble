@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Usage: scripts/wt N
+# Print the worktree path for issue N.
+set -euo pipefail
+. "$(dirname "$0")/_lib.sh"
+
+wt_dir "${1:?usage: scripts/wt N}"

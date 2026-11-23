@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Usage: scripts/check
+# Run lint, types and tests for every package. One line per check; logs only
+# on failure. The Studio plugin has no automated check; see the pull request's
+# manual test script.
+set -uo pipefail
+
+cd "$(git rev-parse --show-toplevel)" || exit 1
+
+fail=0
+found=0
+for pkg in server agent pack site; do
+  [ -f "$pkg/package.json" ] || continue
+  found=1
+  for s in lint typecheck test; do
+    if out=$(npm --prefix "$pkg" run "$s" --if-present --silent 2>&1); then
+      echo "ok   $pkg $s"
+    else
+      echo "FAIL $pkg $s"
+      echo "$out" | tail -n 40
+      fail=1
+    fi
+  done
+done
+[ "$found" = 1 ] || echo "ok   no packages yet, nothing to check"
+exit "$fail"

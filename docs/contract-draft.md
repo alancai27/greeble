@@ -33,3 +33,24 @@ Response: `{ "placements": [ { "assetId": "Barrel", "position": [x,y,z], "rotati
 
 The plugin clones the named asset, scales it, pivots it to `position` with
 `rotationY`, and parents it under `Greeble/<zone id>`. Nothing else is written.
+
+## Jobs: how the two doors reach Studio
+
+Both doors queue a job; the plugin, in Listen mode, carries it out. Map data
+goes plugin -> server directly and never through the model.
+
+- `GET /v1/jobs/next` -> `{ "job": { "id", "type": "dress_zone", "params": { "zone", "maxInstances", "seed" } } | null }`. Marks it running.
+- `POST /v1/jobs/<id>/result` with `{ "ok": true, "result": { ...stats } }` or `{ "ok": false, "result": { "error": "..." } }`.
+
+Jobs are scoped to the studio key that created them.
+
+## Door 1: MCP (devs with their own agent)
+
+`POST /mcp`, JSON-RPC, same bearer key. Tools:
+
+- `greeble_dress_zone { zone, maxInstances?, seed? }` -> `{ id, status }`
+- `greeble_job_status { id }` -> `{ id, status, result }`
+
+## Door 2: chat panel in Studio (devs with no setup)
+
+Not built. It will call a hosted agent that uses the same tools and job queue.

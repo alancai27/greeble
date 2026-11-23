@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Usage: scripts/submit REPORT.md
+# Worker: run checks, push the branch, open (or update) the pull request.
+set -euo pipefail
+. "$(dirname "$0")/_lib.sh"
+
+report="${1:?usage: scripts/submit REPORT.md}"
+[ -f "$report" ] || die "no such file: $report"
+
+branch=$(git rev-parse --abbrev-ref HEAD)
+case "$branch" in
+  issue-*) n="${branch#issue-}" ;;
+  *) die "run this from an issue-N branch" ;;
+esac
+
+[ -z "$(git status --porcelain)" ] || die "uncommitted changes; commit first"
+"$(dirname "$0")/check" || die "checks failed; fix them before submitting"
+
+git push -q -u origin "$branch"
+
+if pr=$(gh pr view "$branch" --json number --jq .number 2>/dev/null); then
+  gh pr comment "$pr" --body-file "$report" >/dev/null
+else
+  title=$(gh issue view "$n" --json title --jq .title)
+  tmp=$(mktemp)
+  printf 'Closes #%s\n\n' "$n" >"$tmp"
+  cat "$report" >>"$tmp"
+  gh pr create --head "$branch" --base main --title "$title" \
+    --body-file "$tmp" >/dev/null
+  rm -f "$tmp"
+  pr=$(gh pr view "$branch" --json number --jq .number)
+fi
+
+set_state "$n" needs-review
+echo "PR #$pr ready for review (issue #$n)"

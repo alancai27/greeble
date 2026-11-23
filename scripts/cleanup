@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Usage: scripts/cleanup N
+# Lead: remove the worktree and branches for a finished issue.
+set -euo pipefail
+. "$(dirname "$0")/_lib.sh"
+
+n="${1:?usage: scripts/cleanup N}"
+root=$(main_root)
+dir=$(wt_dir "$n")
+
+if [ -d "$dir" ]; then
+  git -C "$root" worktree remove --force "$dir"
+fi
+git -C "$root" branch -D "issue-$n" >/dev/null 2>&1 || true
+git -C "$root" push -q origin --delete "issue-$n" >/dev/null 2>&1 || true
+git -C "$root" pull -q --rebase origin main || true
+echo "cleaned issue-$n"
