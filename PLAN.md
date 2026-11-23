@@ -151,9 +151,8 @@ permissions. The installer must ask before each of those and default to off.
 
 ## Cut list
 
-1. Any site world beyond the first two.
-2. Team seats.
-3. Door 2, if model cost per active user is above what a plan can charge.
+1. Team seats.
+2. Door 2, if model cost per active user is above what a plan can charge.
 
 ## Decisions
 
@@ -173,3 +172,4 @@ permissions. The installer must ask before each of those and default to off.
 - 2026-11-23: The site is real 3D throughout (human's call): a 3D blocky character in the classic Roblox build and 3D studded worlds, using `three`. This takes 3D off the cut list and drops the 2D SVG hero and world. We model everything ourselves; no Roblox logo, typeface, face decal or copied mesh.
 - 2026-11-23: Site sections snap (CSS scroll snap), replacing "no scroll hijacking" (human's call). The figure falls out of the hero and lands in the next section, where the world then grows.
 - 2026-11-23: Site gets a simple logo mark: favicon and fixed top-right. Hero title drops to a lighter weight.
+- 2026-11-23: Every site section gets its own 3D world (meadow, desert, neon, snow) from one themed builder; between sections the plate turns 90 degrees and rebuilds in the new theme, and the world alternates sides with the copy (human's call). This takes "worlds beyond the first two" off the cut list.
