@@ -1,0 +1,91 @@
+/* Section content: feature list, demo-video slots and pricing tiers.
+   Colours come from each world's --sky / --ink / --ink-soft (sections.css). */
+
+.copy .features {
+  list-style: none;
+  margin: 0 0 1.2em;
+  padding: 0;
+  display: grid;
+  gap: 0.7em;
+}
+.copy .features li {
+  padding-left: 0.9em;
+  border-left: 3px solid #f2a900;
+  font-size: clamp(17px, 1.3vw, 20px);
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+.copy .features strong { color: var(--ink); }
+
+/* Demo slot: a 16:9 box in the copy column. A <video> or <iframe> with
+   class "demo-media" can replace .demo-frame and fills the same box. */
+.demo {
+  margin: 0.4em 0 1em;
+  width: 100%;
+  max-width: 34rem;
+}
+.demo-frame, .demo-media {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+}
+.demo-media { border: 0; background: #000; }
+.demo-frame {
+  display: grid;
+  place-items: center;
+  border: 2px dashed color-mix(in srgb, var(--ink) 35%, transparent);
+  background: color-mix(in srgb, var(--ink) 7%, var(--sky, #ffffff));
+  color: var(--ink);
+}
+.demo-play { width: clamp(40px, 12%, 64px); height: auto; }
+.demo figcaption {
+  margin-top: 0.45em;
+  font-size: 15px;
+  color: var(--ink-soft);
+}
+
+/* Pricing tiers: stacked on phones and narrow halves. */
+.copy .tiers {
+  list-style: none;
+  margin: 0 0 1.2em;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+/* Three across once world-4's half is wide enough; the copy column widens for
+   the cards while its prose keeps its measure. */
+@media (min-width: 1280px) {
+  #world-4 .copy { max-width: 100%; }
+  #world-4 .copy > p { max-width: 60ch; }
+  .copy .tiers { grid-template-columns: repeat(3, 1fr); }
+}
+.tier {
+  box-sizing: border-box;
+  padding: 16px 16px 12px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  background: color-mix(in srgb, #ffffff 70%, var(--sky, #ffffff));
+}
+.tier h3 {
+  margin: 0 0 0.2em;
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 20px;
+  color: var(--ink);
+}
+.copy .tier-price {
+  margin: 0 0 0.7em;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.tier ul {
+  margin: 0;
+  padding-left: 1.1em;
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+.tier li + li { margin-top: 0.3em; }
