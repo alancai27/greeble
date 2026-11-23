@@ -29,7 +29,10 @@ type Instance = { assetId: string; position: Vec3; scale?: number };
 
 // density: instances per square stud. spacing: median distance to the
 // nearest neighbour of the same asset.
-type AssetStyle = { density: number; scaleMin: number; scaleMax: number; spacing: number };
+// clearance: 10th percentile of the distance from an instance of this asset
+// to its nearest neighbour of ANY asset in the finished map: how close the
+// map itself lets things sit. 0 when the zone has a single instance.
+type AssetStyle = { density: number; scaleMin: number; scaleMax: number; spacing: number; clearance: number };
 type ZoneStyle = { assets: Record<string, AssetStyle> };
 
 // Keyed by zone label. The server trims and lowercases labels; a missing or
@@ -40,7 +43,9 @@ type ProfileRequest = {
   zones: {
     label?: string;
     area?: number;          // dressed ground area, square studs. Omitted: the
-                            // server uses the XZ bounding box of the positions.
+                            // server estimates it from occupied grid cells
+                            // (see "Learned area" below), never more than the
+                            // XZ bounding box of the positions.
     instances: Instance[];  // at least one
   }[];                      // at least one
 };
@@ -73,9 +78,19 @@ type PlaceStats = {
 // - the circle never touches a keepClear box (counted in skippedKeepClear);
 // - the circle never covers a steep surface hit (counted in skippedSlope,
 //   together with the steep hits themselves);
-// - two props' circles never overlap;
-// - an asset whose diameter at scaleMax is more than half the zone's shorter
-//   side is left out and listed in tooLarge.
+// - an asset whose diameter at scaleMax is more than the zone's shorter side
+//   cannot fit and is left out and listed in tooLarge.
+// Spacing between props follows the map, not the footprints, because real
+// maps overlap (tree crowns interpenetrate):
+// - two props of different assets A and B are at least
+//   min(rA + rB, (clearanceA + clearanceB) / 2) apart;
+// - two props of the same asset are at least 0.6 * spacing apart;
+// - an asset with clearance 0 or spacing 0 falls back to non-touching circles.
+//
+// Learned area: with `area` omitted, lay a square grid over the zone's
+// positions with cell = clamp(3 * median nearest-neighbour distance, 4, 100)
+// studs; area = min(XZ bounding-box area, occupied cells * cell * cell).
+// Empty ground between far-apart groups no longer dilutes density.
 
 type Job =
   | { id: string; type: "dress_zone"; params: { zone?: string; maxInstances?: number; seed?: number } }
@@ -181,7 +196,8 @@ Model counts as kit asset X only when its bounding-box size is the kit
 Model's size times one uniform factor, the three axes agreeing within 15%.
 That factor is the instance's `scale`. Same name but a different shape counts
 as unmatched. `assetId` is the kit Model's Name. `footprint` is half the
-larger of the kit Model's bounding-box X and Z sizes. Props are placed by
+XZ diagonal of the kit Model's bounding box, so the circle contains the prop
+at any rotation. Props are placed by
 bounding-box bottom, not pivot.
 
 ## Site
