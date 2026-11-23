@@ -208,14 +208,20 @@ local function sampleSurface(zone: BasePart)
 	return hits
 end
 
--- Walk a slash-separated path from `game`, e.g. "ServerStorage/GreebleKit".
-local function findKit(): Instance
-	local path = kitPath()
+-- Walk a slash-separated path from `game`, e.g. "ServerStorage/GreebleKit". Nil if missing.
+local function findPath(path: string): Instance?
 	local node: Instance? = game
 	for segment in path:gmatch("[^/]+") do
 		node = if node then node:FindFirstChild(segment) else nil
 	end
-	if not node or node == game then
+	if node == game then return nil end
+	return node
+end
+
+local function findKit(): Instance
+	local path = kitPath()
+	local node = findPath(path)
+	if not node then
 		fail("Kit folder not found at " .. path .. ". Check the kit path in Settings.")
 	end
 	return node :: Instance
@@ -358,7 +364,9 @@ button.Click:Connect(dressClicked)
 -- Learn style: read the selected finished map and ask the server for a profile.
 
 -- Collect Models under `node` whose Name matches a kit Model. A matched Model is not searched further.
-local function collectInstances(node: Instance, byId: { [string]: Instance }, out: { any })
+-- Returns how many other Models were skipped (they are still searched for kit Models inside).
+local function collectInstances(node: Instance, byId: { [string]: Instance }, out: { any }): number
+	local unmatched = 0
 	for _, child in node:GetChildren() do
 		local source = if child:IsA("Model") then byId[child.Name] else nil
 		if source then
@@ -369,15 +377,24 @@ local function collectInstances(node: Instance, byId: { [string]: Instance }, ou
 				scale = model:GetScale() / (source :: Model):GetScale(),
 			})
 		else
-			collectInstances(child, byId, out)
+			if child:IsA("Model") then unmatched += 1 end
+			unmatched += collectInstances(child, byId, out)
 		end
 	end
+	return unmatched
 end
 
-local function learn()
-	local selected = Selection:Get()
-	if #selected == 0 then fail("Nothing selected. Select the Folders or Models of a finished map.") end
-	for _, sel in selected do
+local function labelOf(inst: Instance): string?
+	local attr = inst:GetAttribute("Label")
+	return if type(attr) == "string" and trim(attr) ~= "" then attr else nil
+end
+
+type LearnStats = { zones: { string }, instances: number, unmatched: number }
+
+-- Each source becomes one zone. `label` nil means the unlabelled ("default") style.
+local function learnFrom(sources: { { node: Instance, label: string? } }): LearnStats
+	for _, src in sources do
+		local sel = src.node
 		if not (sel:IsA("Folder") or sel:IsA("Model")) then
 			fail(("%s is a %s, not a Folder or Model."):format(sel:GetFullName(), sel.ClassName))
 		end
@@ -385,17 +402,15 @@ local function learn()
 
 	local _, byId = readKit(findKit())
 	local zones, names = {}, {}
-	local total = 0
-	for _, sel in selected do
+	local total, unmatched = 0, 0
+	for _, src in sources do
 		local instances = {}
-		collectInstances(sel, byId, instances)
+		unmatched += collectInstances(src.node, byId, instances)
 		if #instances == 0 then
-			fail(("No kit Models found in %s (kit at %s)."):format(sel:GetFullName(), kitPath()))
+			fail(("No kit Models found in %s (kit at %s)."):format(src.node:GetFullName(), kitPath()))
 		end
-		local attr = sel:GetAttribute("Label")
-		local zoneLabel = if type(attr) == "string" and trim(attr) ~= "" then attr else nil
-		table.insert(zones, { label = zoneLabel, instances = instances })
-		table.insert(names, zoneLabel or "(no label)")
+		table.insert(zones, { label = src.label, instances = instances })
+		table.insert(names, src.label or "default")
 		total += #instances
 	end
 
@@ -404,6 +419,28 @@ local function learn()
 		fail("Server reply has no profile.")
 	end
 	setStatus(("Learned style from %d instances in zones: %s."):format(total, table.concat(names, ", ")))
+	return { zones = names, instances = total, unmatched = unmatched }
+end
+
+local function learn()
+	local selected = Selection:Get()
+	if #selected == 0 then fail("Nothing selected. Select the Folders or Models of a finished map.") end
+	local sources = {}
+	for _, sel in selected do
+		table.insert(sources, { node = sel, label = labelOf(sel) })
+	end
+	learnFrom(sources)
+end
+
+-- A queued learn_profile job: params.path names the map, params.label overrides its Label attribute.
+local function learnProfile(params: any): LearnStats
+	local p = if type(params) == "table" then params else {}
+	if type(p.path) ~= "string" or trim(p.path) == "" then fail("learn_profile needs a path string") end
+	local path = stripSlash(trim(p.path))
+	local node = findPath(path)
+	if not node then fail("Nothing found at path " .. path) end
+	local override = if type(p.label) == "string" and trim(p.label) ~= "" then p.label else nil
+	return learnFrom({ { node = node :: Instance, label = override or labelOf(node :: Instance) } })
 end
 
 local function learnClicked(): boolean
@@ -424,6 +461,7 @@ local function runJob(job)
 	setStatus("Running job " .. tostring(job.id) .. "...")
 	local ok, out = pcall(function()
 		if job.type == "dress_zone" then return dress(job.params) end
+		if job.type == "learn_profile" then return learnProfile(job.params) end
 		fail("unknown job type " .. tostring(job.type))
 	end)
 	if not ok then setStatus("Job " .. tostring(job.id) .. " failed: " .. tostring(out), true) end
