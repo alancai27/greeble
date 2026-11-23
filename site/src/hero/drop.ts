@@ -1,4 +1,4 @@
-// PROTOTYPE (issue #9): scroll-tied hang, snap and drop.
+// Scroll-tied hang, snap and drop.
 // Position is a pure function of scrollY, so the figure always lands
 // exactly on the ground whatever the scroll speed or direction.
 // Only the sway and the landing squash run on the clock.
@@ -17,30 +17,20 @@ export interface FigureState {
   snapped: boolean;
   tie: Pt;         // tie point on the figure
   upperEnd: Pt;    // end of the string piece left on the letter
-  lowerEnd: Pt;    // end of the string piece still on the figure (== anchor while intact)
-  scrollY: number;
-  progress: number;
+  lowerEnd: Pt;    // end of the string piece still on the figure
 }
 
 export interface DropConfig {
   letter: HTMLElement;
-  /** fraction across the letter box where the string ties on */
+  /** fraction across the letter box where the string ties on, at the baseline */
   tieX: number;
-  /** distance above the baseline, in em, where the string ties on */
-  tieEm: number;
+  /** the figure lands on this element's top edge */
   ground: HTMLElement;
   scale: () => number;
   /** string length in px, given the anchor point and figure height in px */
   stringLen: (anchor: Pt, figH: number) => number;
-  /** horizontal travel during the fall, in figure heights */
-  drift: number;
-  /** whole turns during the fall (integer, so it lands upright) */
-  turns: number;
-  /** share of the scroll spent swinging out before the snap (0 = snap at once) */
-  windup?: number;
-  windupAngle?: number;
   /** where the ground sits in the viewport when the landing completes (0..1) */
-  landAt?: number;
+  landAt: number;
   render: (s: FigureState) => void;
 }
 
@@ -53,6 +43,7 @@ const rotV = (x: number, y: number, r: number): Pt => ({
 });
 
 export function startDrop(cfg: DropConfig): () => void {
+  // a zero-size probe right after the letter gives its baseline
   const probe = document.createElement('span');
   probe.className = 'baseline-probe';
   probe.setAttribute('aria-hidden', 'true');
@@ -68,52 +59,37 @@ export function startDrop(cfg: DropConfig): () => void {
     const sy = window.scrollY;
     const lr = cfg.letter.getBoundingClientRect();
     const pr = probe.getBoundingClientRect();
-    const em = parseFloat(getComputedStyle(cfg.letter).fontSize);
-    const anchor = { x: lr.left + window.scrollX + lr.width * cfg.tieX, y: pr.top + sy - cfg.tieEm * em };
+    const anchor = { x: lr.left + window.scrollX + lr.width * cfg.tieX, y: pr.top + sy };
     const k = cfg.scale();
     const figH = FIG_H * k;
     const L = Math.max(12, cfg.stringLen(anchor, figH));
     const groundTop = cfg.ground.getBoundingClientRect().top + sy;
-    const vh = window.innerHeight;
     const start = 8;
-    const end = Math.max(start + 160, groundTop - (cfg.landAt ?? 0.65) * vh);
+    const end = Math.max(start + 160, groundTop - cfg.landAt * window.innerHeight);
     return { anchor, k, figH, L, groundTop, start, end };
   }
 
   function frame(now: number) {
     const still = reduce.matches;
     const { anchor, k, figH, L, groundTop, start, end } = m;
-    const scrollY = window.scrollY;
-    const p = still ? 0 : clamp((scrollY - start) / (end - start), 0, 1);
+    const p = still ? 0 : clamp((window.scrollY - start) / (end - start), 0, 1);
     const t = still ? 0 : now / 1000;
     const sway = 0.07 * Math.sin((t * 2 * Math.PI) / 2.8);
     const half = figH / 2;
-    const windup = cfg.windup ?? 0;
-    const wAngle = cfg.windupAngle ?? 0;
+    const hang = { x: anchor.x + (L + half) * Math.sin(sway), y: anchor.y + (L + half) * Math.cos(sway) };
 
     let centre: Pt;
     let rot: number;
-    let snapped: boolean;
-
-    if (p <= windup && (windup > 0 || p === 0)) {
+    const snapped = p > 0;
+    if (!snapped) {
       // hanging: a pendulum from the letter
-      const w = windup > 0 ? smooth(p / windup) : 0;
-      const th = sway * (1 - w) + wAngle * w;
-      centre = { x: anchor.x + (L + half) * Math.sin(th), y: anchor.y + (L + half) * Math.cos(th) };
-      rot = -th;
-      snapped = false;
+      centre = hang;
+      rot = -sway;
     } else {
-      const q = windup > 0 ? (p - windup) / (1 - windup) : p;
-      const th0 = windup > 0 ? wAngle : 0;
-      const c0 = { x: anchor.x + (L + half) * Math.sin(th0), y: anchor.y + (L + half) * Math.cos(th0) };
-      const margin = figH;
-      const landX = clamp(c0.x + cfg.drift * figH, margin, document.documentElement.clientWidth - margin);
-      const c1 = { x: landX, y: groundTop - half };
-      // gravity: y goes with q squared; a released swing adds a little lift
-      const lift = windup > 0 ? Math.sin(Math.PI * q) * figH * 0.8 * (1 - q) : 0;
-      centre = { x: lerp(c0.x, c1.x, windup > 0 ? q : smooth(q)), y: lerp(c0.y, c1.y, q * q) - lift };
-      rot = lerp(-th0, 0, smooth(q)) + cfg.turns * 2 * Math.PI * smooth(q);
-      snapped = true;
+      // falling: y goes with p squared, the swing settles out on the way down
+      const e = smooth(p);
+      centre = { x: lerp(hang.x, anchor.x, e), y: lerp(anchor.y + L + half, groundTop - half, p * p) };
+      rot = -sway * (1 - e);
     }
 
     // landing squash, triggered when the scroll first reaches the ground
@@ -146,7 +122,7 @@ export function startDrop(cfg: DropConfig): () => void {
       lowerEnd = { x: tie.x + lo.x, y: tie.y + lo.y };
     }
 
-    cfg.render({ anchor, centre, rot, k, sx, sy, snapped, tie, upperEnd, lowerEnd, scrollY, progress: p });
+    cfg.render({ anchor, centre, rot, k, sx, sy, snapped, tie, upperEnd, lowerEnd });
     if (!still || landT !== null) raf = requestAnimationFrame(frame);
     else raf = 0;
   }

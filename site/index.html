@@ -10,47 +10,18 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Unbounded:wght@700;800&display=swap"
     />
-    <!-- PROTOTYPE (issue #9): variant A is inline so it shows with scripts off; B and C are templates. -->
   </head>
-  <body data-variant="a">
-    <div id="app">
-      <header class="hero hero-a">
-        <h1 class="wordmark a-word">Gree<span class="anchor">b</span>le</h1>
-        <div class="a-row">
-          <p class="lede">Greeble dresses your blocked-out zones with your own assets, in your studio's style.</p>
-          <a class="install" href="#install">Install the Studio plugin</a>
-        </div>
-      </header>
-      <section class="next" aria-label="Next section">
-        <div class="ground"></div>
-      </section>
-    </div>
-
-    <template id="variant-b">
-      <header class="hero hero-b">
-        <nav class="b-nav">
-          <h1 class="wordmark b-word">G<span class="anchor">r</span>eeble</h1>
-          <a class="install" href="#install">Install the Studio plugin</a>
-        </nav>
-        <p class="b-headline">Greeble dresses your blocked-out zones with your own assets, in your studio's style.</p>
-      </header>
-      <section class="next" aria-label="Next section">
-        <div class="ground"></div>
-      </section>
-    </template>
-
-    <template id="variant-c">
-      <header class="hero hero-c">
-        <div class="c-top">
-          <p class="lede">Greeble dresses your blocked-out zones with your own assets, in your studio's style.</p>
-          <a class="install" href="#install">Install the Studio plugin</a>
-        </div>
-        <h1 class="wordmark c-word">Greeb<span class="anchor">l</span>e</h1>
-      </header>
-      <section class="next" aria-label="Next section">
-        <div class="ground"></div>
-      </section>
-    </template>
+  <body>
+    <header class="hero">
+      <h1 class="wordmark">Gree<span class="anchor">b</span>le</h1>
+      <div class="hero-row">
+        <p class="lede">Greeble dresses your blocked-out zones with your own assets, in your studio's style.</p>
+        <a class="install" href="#install">Install the Studio plugin</a>
+      </div>
+    </header>
+    <section id="world-1" aria-label="Your first world">
+      <div class="strip"></div>
+    </section>
 
     <script type="module" src="/src/main.ts"></script>
   </body>
