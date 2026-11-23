@@ -23,22 +23,24 @@
   <body>
     <main>
       <h1>Greeble logo candidates</h1>
-      <p>Each at 16, 32 and 128 px, on white and on dark. Candidate 1 ships as the favicon and header mark.</p>
+      <p>The current mark, then three redraws. Each at 16, 32 and 128 px, on white and on dark. Candidate 1 ships as the favicon and header mark.</p>
       <div id="list"></div>
     </main>
     <script>
       const shapes = {
-        c1: '<rect class="ink" x="3" y="13" width="26" height="16" rx="3"/><path d="M7 13a6 6 0 0 1 12 0z" fill="#f2a900"/>',
-        c2: '<rect class="ink" x="2" y="2" width="13" height="13" rx="2"/><rect class="ink" x="17" y="2" width="13" height="13" rx="2"/><rect class="ink" x="2" y="17" width="13" height="13" rx="2"/><circle cx="23.5" cy="23.5" r="6.5" fill="#3f9b4f"/>',
-        c3: '<path class="ink" d="M2 2h28v8H10v12h12v-9h8v17H2z"/><rect x="14" y="13" width="8" height="5" fill="#f2a900"/>',
+        old: '<rect class="ink" x="3" y="13" width="26" height="16" rx="3"/><path d="M7 13a6 6 0 0 1 12 0z" fill="#f2a900"/>',
+        c1: '<rect class="ink" x="4" y="12" width="24" height="14" rx="2"/><path d="M10 12V7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v5z" fill="#f2a900"/>',
+        c2: '<rect class="ink" x="4" y="12" width="24" height="12" rx="2"/><path d="M6 12V9a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v3zm12 0V9a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v3z" fill="#f2a900"/>',
+        c3: '<rect class="ink" x="6" y="14" width="20" height="12" rx="2"/><rect x="12" y="6" width="8" height="6" rx="1" fill="#f2a900"/>',
       };
       const names = {
-        c1: '1. Stud block: a plain block with one stud of detail on top (default)',
-        c2: '2. Dressed cell: three blocked-out cells, one dressed',
-        c3: '3. Block G: the initial cut from a single block, with one amber part',
+        old: 'Current mark: off-centre half-dome, sits low in its box',
+        c1: '1. Stud block: one flat-topped stud, centred on a 24 by 14 brick (ships)',
+        c2: '2. Two-stud brick: a classic 2-wide brick, lower and wider',
+        c3: '3. Lifted stud: a compact brick with the stud separated by a clear gap',
       };
       const list = document.getElementById('list');
-      for (const id of ['c1', 'c2', 'c3']) {
+      for (const id of ['old', 'c1', 'c2', 'c3']) {
         const shape = shapes[id];
         const h = document.createElement('h2');
         h.textContent = names[id];
@@ -49,7 +51,7 @@
           panel.className = 'panel ' + tone;
           for (const size of [16, 32, 128]) {
             panel.insertAdjacentHTML('beforeend',
-              `<svg width="${size}" height="${size}" viewBox="0 0 32 32" role="img" aria-label="Candidate ${id.slice(1)} at ${size} px on ${tone}">${shape}</svg>`);
+              `<svg width="${size}" height="${size}" viewBox="0 0 32 32" role="img" aria-label="${id === 'old' ? 'Current mark' : 'Candidate ' + id.slice(1)} at ${size} px on ${tone}">${shape}</svg>`);
           }
           row.append(panel);
         }
