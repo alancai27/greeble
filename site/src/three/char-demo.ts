@@ -113,4 +113,12 @@ window.heroAt = (h: number) => {
   hero.object.children.forEach((c) => { c.visible = true; });
   return y;
 };
+// For checks: frame the solo character's head (or whole body) from an azimuth in degrees (0 = front).
+(window as unknown as { view: (deg: number, close?: boolean) => void }).view = (deg, close = true) => {
+  const a = (deg * Math.PI) / 180;
+  const [y, d] = close ? [4.3, 9] : [2.6, 16];
+  controls.target.set(0, y, 0);
+  camera.position.set(Math.sin(a) * d, y + d * 0.12, Math.cos(a) * d);
+  controls.update();
+};
 declare global { interface Window { heroAt: (h: number) => number[] } }

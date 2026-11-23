@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 
-// Units: studs. Feet at y = 0, 5 studs tall. Classic six-part build in flat plastic colours.
+// Units: studs. Feet at y = 0, 5 studs tall. Classic six-part build in bevelled plastic, round head on a short neck.
 export type PoseName = 'hang' | 'fall' | 'land' | 'stand';
 export interface Character { object: THREE.Object3D; pose(name: PoseName, t: number): void }
 
@@ -16,8 +16,35 @@ const NECK_Y = 4;
 /** Hand tip of the right arm in `hang`, relative to the feet. hero.ts ties the string here. */
 export const HANG_GRIP = new THREE.Vector3(1.5, SHOULDER_Y + 2, 0);
 
+// Soft moulded plastic: a matte base under a light clearcoat, so each face of a block
+// catches the stage light differently and the bevels pick up a highlight.
 function plastic(color: number) {
-  return new THREE.MeshStandardMaterial({ color, roughness: 0.42, metalness: 0 });
+  return new THREE.MeshPhysicalMaterial({
+    color, roughness: 0.55, metalness: 0, clearcoat: 0.6, clearcoatRoughness: 0.28,
+  });
+}
+
+const BEVEL = 0.12;
+const block = (w: number, h: number, d: number) => new RoundedBoxGeometry(w, h, d, 3, BEVEL);
+
+// Classic head: a short upright cylinder with bevelled top and bottom rims.
+const HEAD_R = 0.6;          // 1.2 studs across
+const NECK_H = 0.08;         // short neck between torso top and head
+const HEAD_H = 1 - NECK_H;   // top of head lands at exactly 5 studs
+const HEAD_BEVEL = 0.16;
+
+function headGeometry() {
+  const pts: THREE.Vector2[] = [new THREE.Vector2(0, 0)];
+  const arc = (cy: number, from: number, to: number) => {
+    for (let i = 0; i <= 8; i++) {
+      const a = from + ((to - from) * i) / 8;
+      pts.push(new THREE.Vector2(HEAD_R - HEAD_BEVEL + Math.cos(a) * HEAD_BEVEL, cy + Math.sin(a) * HEAD_BEVEL));
+    }
+  };
+  arc(HEAD_BEVEL, -Math.PI / 2, 0);
+  arc(HEAD_H - HEAD_BEVEL, 0, Math.PI / 2);
+  pts.push(new THREE.Vector2(0, HEAD_H));
+  return new THREE.LatheGeometry(pts, 48);
 }
 
 function part(geo: THREE.BufferGeometry, mat: THREE.Material, y: number) {
@@ -28,27 +55,32 @@ function part(geo: THREE.BufferGeometry, mat: THREE.Material, y: number) {
   return m;
 }
 
+// Face band: the straight side of the head, wrapped around the front.
+const FACE_H = HEAD_H - 2 * HEAD_BEVEL + 0.04;
+const FACE_ARC = (115 * Math.PI) / 180;
+
 function faceTexture() {
+  // 2:1 to match the band's arc length to height; 1024 wide keeps it sharp at 2x pixel ratio.
   const c = document.createElement('canvas');
-  c.width = 256; c.height = 128;
+  c.width = 1024; c.height = 512;
   const g = c.getContext('2d');
   if (g) {
-    g.fillStyle = '#1b1b1b';
-    for (const x of [96, 160]) {
+    g.fillStyle = '#161616';
+    for (const x of [392, 632]) {
       g.beginPath();
-      g.ellipse(x, 46, 9, 15, 0, 0, Math.PI * 2);
+      g.ellipse(x, 176, 34, 62, 0, 0, Math.PI * 2);
       g.fill();
     }
-    g.strokeStyle = '#1b1b1b';
-    g.lineWidth = 9;
+    g.strokeStyle = '#161616';
+    g.lineWidth = 34;
     g.lineCap = 'round';
     g.beginPath();
-    g.arc(128, 62, 36, Math.PI * 0.2, Math.PI * 0.8);
+    g.arc(512, 236, 152, Math.PI * 0.2, Math.PI * 0.8);
     g.stroke();
   }
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = 4;
+  tex.anisotropy = 8;
   return tex;
 }
 
@@ -115,17 +147,22 @@ export function createCharacter(): Character {
   root.add(body);
 
   const skin = plastic(SKIN);
-  const limb = new THREE.BoxGeometry(1, 2, 1);
+  const limb = block(1, 2, 1);
 
-  const torso = part(new THREE.BoxGeometry(2, 2, 1), plastic(SHIRT), 3);
+  const torso = part(block(2, 2, 1), plastic(SHIRT), 3);
 
-  const headMesh = part(new RoundedBoxGeometry(2, 1, 1, 4, 0.32), skin, 0.5);
+  const neckMesh = part(new THREE.CylinderGeometry(0.34, 0.38, NECK_H + 0.1, 24), skin, (NECK_H + 0.1) / 2 - 0.05);
+  const headMesh = part(headGeometry(), skin, NECK_H);
+  const faceR = HEAD_R + 0.003;
   const face = new THREE.Mesh(
-    new THREE.PlaneGeometry(1.6, 0.8),
-    new THREE.MeshStandardMaterial({ map: faceTexture(), transparent: true, alphaTest: 0.5, roughness: 0.5 }),
+    new THREE.CylinderGeometry(faceR, faceR, FACE_H, 32, 1, true, -FACE_ARC / 2, FACE_ARC),
+    new THREE.MeshPhysicalMaterial({
+      map: faceTexture(), transparent: true, depthWrite: false, roughness: 0.55, clearcoat: 0.6, clearcoatRoughness: 0.28,
+      polygonOffset: true, polygonOffsetFactor: -2,
+    }),
   );
-  face.position.set(0, 0.5, 0.503);
-  const neck = joint(new THREE.Vector3(0, NECK_Y, 0), headMesh, face);
+  face.position.y = NECK_H + HEAD_H / 2;
+  const neck = joint(new THREE.Vector3(0, NECK_Y, 0), neckMesh, headMesh, face);
 
   const rArm = joint(new THREE.Vector3(1.5, SHOULDER_Y, 0), part(limb, skin, -1));
   const lArm = joint(new THREE.Vector3(-1.5, SHOULDER_Y, 0), part(limb, skin, -1));
