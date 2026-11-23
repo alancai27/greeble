@@ -96,7 +96,8 @@ Rules for building it:
   us. The human checks Roblox's brand guidelines before launch.
 - All copy is real text in the page, readable with scripts off and by screen
   readers. The animation decorates the page; it never gates content.
-- No scroll hijacking: the page scrolls at the user's own speed.
+- The page snaps from section to section with CSS scroll snap. No script
+  takes over the scroll wheel or touch.
 - Honour `prefers-reduced-motion` with static illustrations per section.
 - Must run smoothly on a mid-range phone. The figure and worlds are real 3D
   (WebGL, `three`) in one fixed canvas behind the copy, driven by scroll
@@ -170,3 +171,5 @@ permissions. The installer must ask before each of those and default to off.
 - 2026-11-23: Site hero is layout A (Poster). B and C are dropped.
 - 2026-11-23: The figure is a Roblox-style blocky character and the worlds are Roblox-style, built from bricks with studs (human's call). We draw them ourselves: still no Roblox logo, typeface or copied assets, and the brand-guideline check before launch still applies.
 - 2026-11-23: The site is real 3D throughout (human's call): a 3D blocky character in the classic Roblox build and 3D studded worlds, using `three`. This takes 3D off the cut list and drops the 2D SVG hero and world. We model everything ourselves; no Roblox logo, typeface, face decal or copied mesh.
+- 2026-11-23: Site sections snap (CSS scroll snap), replacing "no scroll hijacking" (human's call). The figure falls out of the hero and lands in the next section, where the world then grows.
+- 2026-11-23: Site gets a simple logo mark: favicon and fixed top-right. Hero title drops to a lighter weight.
