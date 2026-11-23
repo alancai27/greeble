@@ -20,6 +20,21 @@ const TOOLS = [
     },
   },
   {
+    name: "greeble_learn_profile",
+    description:
+      "Learn the studio's style from an existing, hand-dressed area in Roblox Studio. " +
+      "Queues a job that the Greeble Studio plugin carries out; returns a job id. " +
+      "Studio must be open with the Greeble plugin listening.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        path: { type: "string", description: "Slash-separated path from game to a Folder or Model, e.g. Workspace/Map/Market" },
+        label: { type: "string", description: "Optional name for this style sample" },
+      },
+      required: ["path"],
+    },
+  },
+  {
     name: "greeble_job_status",
     description: "Check a Greeble job. Returns queued, running, done or failed, with placement stats when done.",
     inputSchema: { type: "object", properties: { id: { type: "string" } }, required: ["id"] },
@@ -34,6 +49,14 @@ function callTool(key, name, args = {}) {
     const job = createJob(key, "dress_zone", {
       zone: args.zone, maxInstances: args.maxInstances ?? 500, seed: args.seed ?? 1,
     });
+    return text({ id: job.id, status: job.status });
+  }
+  if (name === "greeble_learn_profile") {
+    if (typeof args.path !== "string" || !args.path) throw new Error("path is required");
+    if (args.label !== undefined && typeof args.label !== "string") throw new Error("label must be a string");
+    const params = { path: args.path };
+    if (args.label !== undefined) params.label = args.label;
+    const job = createJob(key, "learn_profile", params);
     return text({ id: job.id, status: job.status });
   }
   if (name === "greeble_job_status") {
