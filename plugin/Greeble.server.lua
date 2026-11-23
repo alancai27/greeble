@@ -10,7 +10,8 @@
 --      The status line at the bottom of that widget shows the last result or error.
 --   5. To learn a style, select the Folders or Models of a finished map and click "Learn style".
 --      Each selection becomes one zone (its "Label" attribute, if set, names it). Every Model
---      inside whose Name matches a kit Model counts as one instance. The server stores the style
+--      inside whose Name matches a kit Model and whose box is that Model's box at one uniform
+--      scale (axes within 15%) counts as one instance. The server stores the style
 --      per key and label; nothing is saved in the plugin.
 --   6. Click "Dress zone". The server uses the style learned for the zone's "Label" attribute,
 --      or the unlabelled ("default") style. Optional zone attributes: ZoneId, Label, MaxInstances, Seed.
@@ -239,16 +240,37 @@ local function findKit(): Instance
 	return node :: Instance
 end
 
+-- Box size in the Model's own frame. Never GetExtentsSize: that is the world-aligned box.
+local function boxSize(model: Model): Vector3
+	local _, size = model:GetBoundingBox()
+	return size
+end
+
 local function readKit(kit: Instance)
-	local assets, byId = {}, {}
+	local assets, byId, sizes = {}, {}, {}
 	for _, child in kit:GetChildren() do
 		if child:IsA("Model") then
-			local size = child:GetExtentsSize()
+			local size = boxSize(child)
 			table.insert(assets, { id = child.Name, footprint = math.max(size.X, size.Z) / 2 })
 			byId[child.Name] = child
+			sizes[child.Name] = size
 		end
 	end
-	return assets, byId
+	return assets, byId, sizes
+end
+
+local SHAPE_TOLERANCE = 1.15
+
+-- The uniform factor f with size ~= kitSize * f, or nil when the three axis ratios
+-- disagree by more than SHAPE_TOLERANCE (max ratio / min ratio).
+local function uniformScale(size: Vector3, kitSize: Vector3): number?
+	local eps = 1e-3
+	local rx = size.X / math.max(kitSize.X, eps)
+	local ry = size.Y / math.max(kitSize.Y, eps)
+	local rz = size.Z / math.max(kitSize.Z, eps)
+	local lo, hi = math.min(rx, ry, rz), math.max(rx, ry, rz)
+	if lo <= 0 or hi / lo > SHAPE_TOLERANCE then return nil end
+	return (rx + ry + rz) / 3
 end
 
 ---------------------------------------------------------------------------
@@ -386,12 +408,20 @@ local function dress(opts: { zone: string?, maxInstances: number?, seed: number?
 
 	local stats = if type(result.stats) == "table" then result.stats else {}
 	local placed = stats.placed or 0
+	local text
 	if placed == 0 then
-		setStatus(("Nothing placed in %s (skipped: %d keep-clear, %d overlap, %d slope)."):format(
-			zoneName, stats.skippedKeepClear or 0, stats.skippedOverlap or 0, stats.skippedSlope or 0))
+		text = ("Nothing placed in %s (skipped: %d keep-clear, %d overlap, %d slope)."):format(
+			zoneName, stats.skippedKeepClear or 0, stats.skippedOverlap or 0, stats.skippedSlope or 0)
 	else
-		setStatus(("Placed %d instances in %s. Undo with Ctrl+Z."):format(placed, zoneName))
+		text = ("Placed %d instances in %s. Undo with Ctrl+Z."):format(placed, zoneName)
 	end
+	local tooLarge = stats.tooLarge
+	if type(tooLarge) == "table" and #tooLarge > 0 then
+		local ids = {}
+		for _, id in tooLarge do table.insert(ids, tostring(id)) end
+		text ..= " Too large for this zone: " .. table.concat(ids, ", ")
+	end
+	setStatus(text)
 	return result.stats
 end
 
@@ -407,22 +437,24 @@ button.Click:Connect(dressClicked)
 ---------------------------------------------------------------------------
 -- Learn style: read the selected finished map and ask the server for a profile.
 
--- Collect Models under `node` whose Name matches a kit Model. A matched Model is not searched further.
+-- Collect Models under `node` that match a kit Model: same Name, and a box that is the kit
+-- Model's box times one uniform factor. A matched Model is not searched further.
 -- Returns how many other Models were skipped (they are still searched for kit Models inside).
-local function collectInstances(node: Instance, byId: { [string]: Instance }, out: { any }): number
+local function collectInstances(node: Instance, sizes: { [string]: Vector3 }, out: { any }): number
 	local unmatched = 0
 	for _, child in node:GetChildren() do
-		local source = if child:IsA("Model") then byId[child.Name] else nil
-		if source then
+		local kitSize = if child:IsA("Model") then sizes[child.Name] else nil
+		local scale = if kitSize then uniformScale(boxSize(child :: Model), kitSize) else nil
+		if scale then
 			local model = child :: Model
 			table.insert(out, {
 				assetId = model.Name,
 				position = v3(model:GetPivot().Position),
-				scale = model:GetScale() / (source :: Model):GetScale(),
+				scale = scale,
 			})
 		else
 			if child:IsA("Model") then unmatched += 1 end
-			unmatched += collectInstances(child, byId, out)
+			unmatched += collectInstances(child, sizes, out)
 		end
 	end
 	return unmatched
@@ -444,12 +476,12 @@ local function learnFrom(sources: { { node: Instance, label: string? } }): Learn
 		end
 	end
 
-	local _, byId = readKit(findKit())
+	local _, _, sizes = readKit(findKit())
 	local zones, names = {}, {}
 	local total, unmatched = 0, 0
 	for _, src in sources do
 		local instances = {}
-		unmatched += collectInstances(src.node, byId, instances)
+		unmatched += collectInstances(src.node, sizes, instances)
 		if #instances == 0 then
 			fail(("No kit Models found in %s (kit at %s)."):format(src.node:GetFullName(), kitPath()))
 		end
