@@ -1,3 +1,6 @@
+/* Hero wordmark face (see .hero .wordmark below). */
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wdth,wght@75..100,400..500&display=swap');
+
 /* Brand: the fixed top-right mark and the hero wordmark. */
 
 .brand-mark {
@@ -20,19 +23,20 @@
   .brand-mark svg { width: 34px; height: 34px; }
 }
 
-/* Hero wordmark, option 1 of /title-demo.html: Bricolage Grotesque's
-   display cut at its widest width, with open tracking, sized to fill most
-   of the hero. Same family as the body, so no extra font loads.
+/* Hero wordmark, option 1 of /title-demo.html: Instrument Sans, a plain,
+   well-drawn open-licence sans (no ink traps, a simple "r" arm and a round
+   "b" bowl), at its full width with open tracking, sized so the word is as
+   wide as before. Loaded by the @import at the top of this file.
    Beats .wordmark in style.css.
    --track is the letter-spacing; the negative end margin cancels the
    spacing the browser adds after the last letter, so the word's box ends
    on the "e" and stays centred if it is ever centred. */
 .hero .wordmark {
   --track: 0.04em;
-  font-family: 'Bricolage Grotesque', system-ui, sans-serif;
-  font-variation-settings: 'opsz' 96, 'wdth' 100;
-  font-weight: 420;
-  font-size: min(24.5vw, 280px);
+  font-family: 'Instrument Sans', system-ui, sans-serif;
+  font-variation-settings: 'wdth' 100;
+  font-weight: 450;
+  font-size: min(21.9vw, 250px);
   letter-spacing: var(--track);
   margin-inline-end: calc(-1 * var(--track));
   line-height: 0.9;
