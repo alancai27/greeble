@@ -198,7 +198,8 @@ local function sampleSurface(zone: BasePart)
 	for x = -half.X, half.X, CELL do
 		for z = -half.Z, half.Z, CELL do
 			local origin = Vector3.new(zone.Position.X + x, top, zone.Position.Z + z)
-			local hit = workspace:Raycast(origin, Vector3.new(0, -zone.Size.Y, 0), params)
+			-- Travel 1 stud past the bottom face so a zone sitting flush on the ground still hits it.
+			local hit = workspace:Raycast(origin, Vector3.new(0, -(zone.Size.Y + 1), 0), params)
 			if hit then
 				table.insert(hits, { position = v3(hit.Position), normal = v3(hit.Normal) })
 			end
