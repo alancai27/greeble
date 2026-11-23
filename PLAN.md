@@ -23,7 +23,8 @@ from `docs/contract-draft.md`, and creates issues for milestone 1 only.
 | platform | `server/` | API, keys and accounts, job queue, MCP endpoint, placement and profiles, usage metering |
 | studio | `plugin/` | Studio plugin: dress, Listen mode, profile learning from a selected map, chat panel |
 | agent | `agent/` | Hosted agent for Door 2: prompts, Roblox rules, model calls, tool use, cost limits. A library the server imports |
-| pack | `pack/`, `site/` | Door 1 installer, Roblox rules and skills, project template; later the one-page site |
+| pack | `pack/` | Door 1 installer, Roblox rules and skills, project template |
+| site | `site/` | The public website. Depends on nothing else, so it runs alongside milestone 1 |
 
 `docs/` belongs to the planning lead. Contract changes follow `agents/lead.md`.
 
@@ -46,6 +47,7 @@ from `docs/contract-draft.md`, and creates issues for milestone 1 only.
   posts instances; kit read from a configurable folder; settings widget for
   URL and key instead of command-bar calls; errors shown in a widget.
 - pack: nothing yet. agent: nothing yet.
+- site: build to the "Site" section below, starting with the hero prototype.
 - The plugin cannot be tested by agents without Studio. Every studio issue
   must end with a short manual test script for the human in the pull request.
 
@@ -64,6 +66,50 @@ from `docs/contract-draft.md`, and creates issues for milestone 1 only.
 - 4: deploy target chosen by the human; persistent storage for keys, jobs,
   profiles and usage (jobs are in memory today); trial limits.
 - 5: checkout webhook; seats; shared studio rules and profiles.
+
+## Site
+
+One scrolling page. The scroll tells the product's story: a bare block of
+ground gets detailed into a world, which is what Greeble does to a map.
+
+Story, top to bottom:
+
+1. Hero. White background, the wordmark, one line of copy, an install
+   button. A small blocky figure hangs from one letter of the title by a
+   string and sways slightly.
+2. The drop. As the user scrolls, the string snaps and the figure falls,
+   tied to scroll position. It lands on a flat strip of ground at the top of
+   the next section, with a squash on impact.
+3. First world. As the user keeps scrolling, that strip grows into a full
+   world: terrain rises, then props, foliage and lighting arrive in layers.
+   The copy here explains map dressing.
+4. More worlds. Each later section is a different, vivid world with its own
+   palette and biome (for example desert, neon city, snow, candy), and the
+   figure walks or drops from one into the next. One section each for: the
+   pack and workflow, the hosted tools, pricing and install.
+5. Footer on white again.
+
+Rules for building it:
+
+- The figure and every world are original art. Do not use Roblox's avatar,
+  logo, typeface or any real game's assets, and don't imply Roblox endorses
+  us. The human checks Roblox's brand guidelines before launch.
+- All copy is real text in the page, readable with scripts off and by screen
+  readers. The animation decorates the page; it never gates content.
+- No scroll hijacking: the page scrolls at the user's own speed.
+- Honour `prefers-reduced-motion` with static illustrations per section.
+- Must run smoothly on a mid-range phone. Start with layered 2D (SVG or
+  canvas) driven by scroll position; real 3D is on the cut list.
+- No dependencies beyond the framework unless an issue names one.
+- First issue: use the `prototype` skill for three structurally different
+  takes on the hero and drop, then escalate the choice to the human. Use the
+  `frontend-design` skill for art direction, and `webapp-testing` to check
+  each section at phone and desktop sizes.
+- Copy placeholders are fine until pricing and the name's tagline are set.
+
+Checks: a phone-sized and a desktop-sized run show every section's copy; the
+drop lands on the ground at any scroll speed, forwards and backwards;
+reduced-motion mode shows no movement; no console errors.
 
 ## Pack source
 
@@ -85,7 +131,8 @@ permissions. The installer must ask before each of those and default to off.
   agent config, rules and skills for the pack.
 - Running every Studio-facing change in Studio.
 - A commercial model API key before milestone 3; a spend limit on it.
-- Hosting account and domain before milestone 4.
+- Hosting account and domain before milestone 4 (the site can deploy earlier).
+- The site's wordmark, tagline and final copy; picking the hero prototype.
 - Payment account owner before milestone 5.
 - Licence check before the pack installs any third-party tool; install from
   official sources, never redistribute copies. First: who owns the base skill
@@ -102,7 +149,7 @@ permissions. The installer must ask before each of those and default to off.
 
 ## Cut list
 
-1. `site/` (share a repo link and a clip instead).
+1. Real 3D on the site, and any world beyond the first two.
 2. Team seats.
 3. Door 2, if model cost per active user is above what a plan can charge.
 
@@ -114,3 +161,4 @@ permissions. The installer must ask before each of those and default to off.
 - 2026-11-22: First buyers are devs without an AI setup, reached through the team's contacts.
 - 2026-11-22: We do not train generation models. Hosted tools may wrap existing image and mesh models once licences are checked (replaces the earlier "generation out of scope").
 - 2026-11-22: The pack starts from Matt's workflow brief, Windows first.
+- 2026-11-22: The site is in scope now, as its own area, with a scroll story of a figure falling into worlds that build themselves.
