@@ -5,7 +5,7 @@ description: Check every Luau file in this project, then give a ranked fix list.
 # Audit
 
 1. Find every `.lua` and `.luau` file in the project.
-2. Run `<CLAUDE>/hooks/greeble/luau-check.sh` on each one. Findings print as
+2. Run `<CLAUDE>/hooks/greeble/luau-check.sh` on each one. Pass the file path as the one argument. Findings print to stderr as
    `<file>:<line>: <message>`. Exit 2 means it found something; exit 0 means
    the file is clean.
 3. Read the files with findings, plus any RemoteEvent, RemoteFunction,
