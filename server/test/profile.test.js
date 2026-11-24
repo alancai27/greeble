@@ -159,6 +159,22 @@ test("clearance is the 10th-percentile nearest-any-neighbour distance; 0 alone",
   assert.equal(one.default.assets.Rock.clearance, 0);
 });
 
+test("6 instances use the bounding box", () => {
+  const six = [...block("Tree", 2, 3, 0, 0), { assetId: "Tree", position: [40, 0, 9] }, { assetId: "Tree", position: [2, 0, 30] }];
+  assert.equal(six.length, 6);
+  assert.equal(learnedArea(six), bbox(six));
+});
+
+test("200 random points in a square, bounding box mostly empty, learn the square's area", () => {
+  let seed = 6;
+  const rnd = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648);
+  const pts = Array.from({ length: 200 }, () => ({ assetId: "Tree", position: [rnd() * 100, 0, rnd() * 100] }));
+  pts.push({ assetId: "Rock", position: [400, 0, 400] });
+  const area = learnedArea(pts);
+  assert.ok(Math.abs(area - 10000) <= 0.2 * 10000, `area ${area}`);
+  assert.ok(area < bbox(pts) / 10);
+});
+
 test("a given area is used exactly", () => {
   const instances = [...block("Tree", 5, 2, 0, 0), ...block("Tree", 5, 2, 500, 500)];
   const { default: z } = learnZones({ zones: [{ area: 1234, instances }] });
