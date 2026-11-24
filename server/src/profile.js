@@ -52,21 +52,22 @@ const bboxArea = (instances) => {
   return (Math.max(...xs) - Math.min(...xs)) * (Math.max(...zs) - Math.min(...zs));
 };
 
+/** XZ distance from instance a to its k-th nearest other instance in list. */
+const kthNearest = (a, list, k) =>
+  list.filter((b) => b !== a).map((b) => dist2d(a.position, b.position)).sort((x, y) => x - y)[k - 1];
+
 /**
- * Ground the instances actually cover: a square grid over their XZ positions with
- * cell = clamp(3 * median nearest-neighbour distance, 4, 100); area is the occupied
- * cells' area, capped at the bounding box.
+ * Ground the instances actually cover, from local density: r = XZ distance to the
+ * 6th-nearest neighbour, local density = 5.67 / (pi r^2), area = instances / median
+ * local density, capped at the bounding box. Fewer than 7 instances, or a non-positive
+ * result (stacked duplicates): bounding box.
  */
 export const learnedArea = (instances) => {
   const box = bboxArea(instances);
-  if (!instances.length) return box;
-  const nn = instances.map((a) => nearestIn(a, instances)).filter((d) => d < Infinity);
-  const cell = Math.min(100, Math.max(4, 3 * median(nn)));
-  const x0 = Math.min(...instances.map((i) => i.position[0]));
-  const z0 = Math.min(...instances.map((i) => i.position[2]));
-  const cells = new Set(instances.map((i) =>
-    `${Math.floor((i.position[0] - x0) / cell)},${Math.floor((i.position[2] - z0) / cell)}`));
-  return Math.min(box, cells.size * cell * cell);
+  if (instances.length < 7) return box;
+  const dens = instances.map((a) => 5.67 / (Math.PI * kthNearest(a, instances, 6) ** 2));
+  const area = instances.length / median(dens);
+  return area > 0 ? Math.min(box, area) : box;
 };
 
 /** Learn one ZoneStyle per zone label from a ProfileRequest. */
