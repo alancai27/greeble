@@ -89,11 +89,14 @@ type PlaceStats = {
 //
 // Learned area: with `area` omitted, the server measures how densely the
 // map is dressed where it is dressed. For each instance, r = XZ distance to
-// its 6th-nearest neighbour of any asset; local density = 5 / (pi * r * r).
+// its 6th-nearest neighbour of any asset; local density = 5.67 / (pi * r * r)
+// (5.67 is the median of the 6th-neighbour statistic for an even random
+// scatter, so such a scatter comes out at its true area).
 // area = min(XZ bounding-box area, instances / median local density).
-// With fewer than 7 instances the area is the bounding box.
-// Checked against a real map: within 5% of the props counted in windows of
-// the original (#157); the bounding box was 26% low, a 50-stud grid 53% high.
+// With fewer than 7 instances, or when that area is not positive (stacked
+// duplicates), the area is the bounding box.
+// Checked against a real map (#157): about 8% above the props counted in
+// windows of the original; the bounding box was 26% low, a 50-stud grid 53% high.
 
 type Job =
   | { id: string; type: "dress_zone"; params: { zone?: string; maxInstances?: number; seed?: number } }
