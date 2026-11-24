@@ -165,14 +165,26 @@ test("6 instances use the bounding box", () => {
   assert.equal(learnedArea(six), bbox(six));
 });
 
-test("200 random points in a square, bounding box mostly empty, learn the square's area", () => {
-  let seed = 6;
-  const rnd = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648);
-  const pts = Array.from({ length: 200 }, () => ({ assetId: "Tree", position: [rnd() * 100, 0, rnd() * 100] }));
-  pts.push({ assetId: "Rock", position: [400, 0, 400] });
-  const area = learnedArea(pts);
-  assert.ok(Math.abs(area - 10000) <= 0.2 * 10000, `area ${area}`);
-  assert.ok(area < bbox(pts) / 10);
+test("200 random points in a square, bounding box mostly empty, learn the square's area for seeds 1-30", () => {
+  for (let s = 1; s <= 30; s++) {
+    let seed = s;
+    const rnd = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648);
+    const pts = Array.from({ length: 200 }, () => ({ assetId: "Tree", position: [rnd() * 100, 0, rnd() * 100] }));
+    pts.push({ assetId: "Rock", position: [400, 0, 400] });
+    const area = learnedArea(pts);
+    assert.ok(Math.abs(area - 10000) <= 0.2 * 10000, `seed ${s} area ${area}`);
+    assert.ok(area < bbox(pts) / 10);
+  }
+});
+
+test("stacked duplicate positions fall back to the bounding box instead of throwing", () => {
+  const stacked = [
+    ...Array.from({ length: 10 }, () => ({ assetId: "Crate", position: [5, 0, 5] })),
+    { assetId: "Crate", position: [0, 0, 0] }, { assetId: "Crate", position: [20, 0, 10] },
+  ];
+  assert.equal(learnedArea(stacked), bbox(stacked));
+  const { default: z } = learnZones({ zones: [{ instances: stacked }] });
+  assert.equal(z.assets.Crate.density, 12 / bbox(stacked));
 });
 
 test("a given area is used exactly", () => {

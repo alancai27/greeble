@@ -58,14 +58,16 @@ const kthNearest = (a, list, k) =>
 
 /**
  * Ground the instances actually cover, from local density: r = XZ distance to the
- * 6th-nearest neighbour, local density = 5 / (pi r^2), area = instances / median
- * local density, capped at the bounding box. Fewer than 7 instances: bounding box.
+ * 6th-nearest neighbour, local density = 5.67 / (pi r^2), area = instances / median
+ * local density, capped at the bounding box. Fewer than 7 instances, or a non-positive
+ * result (stacked duplicates): bounding box.
  */
 export const learnedArea = (instances) => {
   const box = bboxArea(instances);
   if (instances.length < 7) return box;
-  const dens = instances.map((a) => 5 / (Math.PI * kthNearest(a, instances, 6) ** 2));
-  return Math.min(box, instances.length / median(dens));
+  const dens = instances.map((a) => 5.67 / (Math.PI * kthNearest(a, instances, 6) ** 2));
+  const area = instances.length / median(dens);
+  return area > 0 ? Math.min(box, area) : box;
 };
 
 /** Learn one ZoneStyle per zone label from a ProfileRequest. */
