@@ -43,7 +43,7 @@ type ProfileRequest = {
   zones: {
     label?: string;
     area?: number;          // dressed ground area, square studs. Omitted: the
-                            // server estimates it from occupied grid cells
+                            // server estimates it from local density
                             // (see "Learned area" below), never more than the
                             // XZ bounding box of the positions.
     instances: Instance[];  // at least one
@@ -87,10 +87,13 @@ type PlaceStats = {
 // - two props of the same asset are at least 0.6 * spacing apart;
 // - an asset with clearance 0 or spacing 0 falls back to non-touching circles.
 //
-// Learned area: with `area` omitted, lay a square grid over the zone's
-// positions with cell = clamp(3 * median nearest-neighbour distance, 4, 100)
-// studs; area = min(XZ bounding-box area, occupied cells * cell * cell).
-// Empty ground between far-apart groups no longer dilutes density.
+// Learned area: with `area` omitted, the server measures how densely the
+// map is dressed where it is dressed. For each instance, r = XZ distance to
+// its 6th-nearest neighbour of any asset; local density = 5 / (pi * r * r).
+// area = min(XZ bounding-box area, instances / median local density).
+// With fewer than 7 instances the area is the bounding box.
+// Checked against a real map: within 5% of the props counted in windows of
+// the original (#157); the bounding box was 26% low, a 50-stud grid 53% high.
 
 type Job =
   | { id: string; type: "dress_zone"; params: { zone?: string; maxInstances?: number; seed?: number } }
